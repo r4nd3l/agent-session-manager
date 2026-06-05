@@ -1,0 +1,40 @@
+[project]
+name = "claude-session-manager"
+version = "0.1.0"
+description = "Native GTK4 GUI to manage and resume Claude Code sessions"
+readme = "README.md"
+license = { text = "GPL-3.0-or-later" }
+authors = [{ name = "Máté Molnár", email = "molnar.mate@zengo.eu" }]
+requires-python = ">=3.10"
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: X11 Applications :: GTK",
+    "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3",
+    "Topic :: Terminals",
+]
+# PyGObject/GTK/VTE come from system packages (see README), not pip:
+#   sudo apt install python3-gi gir1.2-gtk-4.0 gir1.2-adw-1 gir1.2-vte-3.91
+dependencies = []
+
+[project.scripts]
+claude-session-manager = "claude_session_manager.app:main"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["claude_session_manager*"]
+
+[tool.ruff]
+line-length = 110
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B"]
+ignore = ["E402"]  # gi.require_version must precede gi.repository imports
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

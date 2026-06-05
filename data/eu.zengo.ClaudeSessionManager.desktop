@@ -1,0 +1,13 @@
+[Desktop Entry]
+Type=Application
+Name=Claude Session Manager
+GenericName=Session Manager
+Comment=Manage and resume Claude Code sessions
+Exec=python3 -m claude_session_manager
+Path=/home/matt/Documents/Git/Project__Zengo/ClaudeSessionManager
+Icon=eu.zengo.ClaudeSessionManager
+Terminal=false
+Categories=Development;
+Keywords=claude;ai;terminal;session;code;
+StartupNotify=true
+StartupWMClass=eu.zengo.ClaudeSessionManager
