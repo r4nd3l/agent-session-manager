@@ -1,0 +1,16 @@
+image: python:3.12-slim
+
+stages:
+  - check
+
+lint:
+  stage: check
+  script:
+    - pip install --quiet ruff
+    - ruff check claude_session_manager/ tests/
+
+test:
+  stage: check
+  script:
+    - pip install --quiet pytest
+    - python -m pytest tests/ -q
