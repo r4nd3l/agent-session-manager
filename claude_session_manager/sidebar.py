@@ -1,0 +1,418 @@
+"""Session sidebar: search, project accordion, favorites, selection mode.
+
+Rows bind to SessionItem properties, so renames/stars/status changes update
+in place; the list is only rebuilt when the store reports an order change.
+
+Emits:
+  open-session   (SessionItem, bool fork)
+  open-many      (list[SessionItem])
+  trash-many     (list[SessionItem])
+"""
+
+from __future__ import annotations
+
+import shutil
+
+import gi
+
+gi.require_version("Gtk", "4.0")
+gi.require_version("Adw", "1")
+from gi.repository import Adw, Gdk, Gio, GLib, GObject, Gtk  # noqa: E402
+
+from .models import FAV_GROUP, SessionItem
+from .store import SessionStore
+
+_GHOSTTY = shutil.which("ghostty")
+_ELLIPSIZE_END = 3  # Pango.EllipsizeMode.END
+
+
+class SessionRow(Gtk.ListBoxRow):
+    def __init__(self, item: SessionItem, sidebar: SessionSidebar) -> None:
+        super().__init__()
+        self.item = item
+        self._sidebar = sidebar
+
+        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
+        box.set_margin_top(8)
+        box.set_margin_bottom(8)
+        box.set_margin_start(12)
+        box.set_margin_end(12)
+
+        top = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+
+        self.check = Gtk.CheckButton(valign=Gtk.Align.CENTER, visible=False)
+        self.check.connect("toggled", lambda c: sidebar.on_row_check_toggled(self, c.get_active()))
+        top.append(self.check)
+
+        self.dot = Gtk.Box(valign=Gtk.Align.CENTER)
+        self.dot.add_css_class("status-dot")
+        top.append(self.dot)
+
+        name_label = Gtk.Label(xalign=0.0, hexpand=True)
+        name_label.set_ellipsize(_ELLIPSIZE_END)
+        name_label.add_css_class("heading")
+        top.append(name_label)
+
+        star = Gtk.Button(valign=Gtk.Align.CENTER)
+        star.add_css_class("flat")
+        star.connect(
+            "clicked",
+            lambda *_: self.activate_action("win.toggle-favorite", GLib.Variant("s", item.session_id)),
+        )
+        top.append(star)
+
+        rename = Gtk.Button(icon_name="document-edit-symbolic", valign=Gtk.Align.CENTER)
+        rename.add_css_class("flat")
+        rename.set_tooltip_text("Rename session")
+        rename.connect(
+            "clicked",
+            lambda *_: self.activate_action("win.rename-session", GLib.Variant("s", item.session_id)),
+        )
+        top.append(rename)
+        box.append(top)
+
+        subtitle_label = Gtk.Label(xalign=0.0)
+        subtitle_label.set_ellipsize(_ELLIPSIZE_END)
+        subtitle_label.add_css_class("dim-label")
+        subtitle_label.add_css_class("caption")
+        box.append(subtitle_label)
+
+        preview_label = Gtk.Label(xalign=0.0)
+        preview_label.set_ellipsize(_ELLIPSIZE_END)
+        preview_label.add_css_class("dim-label")
+        preview_label.add_css_class("caption")
+        box.append(preview_label)
+
+        self.set_child(box)
+
+        # Property bindings: released automatically when either side is finalized.
+        flags = GObject.BindingFlags.SYNC_CREATE
+        item.bind_property("display-name", name_label, "label", flags)
+        item.bind_property("subtitle", subtitle_label, "label", flags)
+        item.bind_property("preview", preview_label, "label", flags)
+        item.bind_property(
+            "preview", preview_label, "visible", flags, lambda _b, value: bool(value)
+        )
+        item.bind_property(
+            "favorite", star, "icon-name", flags,
+            lambda _b, fav: "starred-symbolic" if fav else "non-starred-symbolic",
+        )
+        item.bind_property(
+            "favorite", star, "tooltip-text", flags,
+            lambda _b, fav: "Remove from favorites" if fav else "Add to favorites",
+        )
+
+        # Status dot needs CSS-class updates: plain signal, detached on unroot.
+        self._status_handler = item.connect("notify::status", self._on_status_changed)
+        self._on_status_changed(item, None)
+
+        right_click = Gtk.GestureClick(button=3)
+        right_click.connect("pressed", self._on_right_click)
+        self.add_controller(right_click)
+
+    def do_unroot(self) -> None:
+        if self._status_handler is not None:
+            self.item.disconnect(self._status_handler)
+            self._status_handler = None
+        Gtk.ListBoxRow.do_unroot(self)
+
+    def _on_status_changed(self, item: SessionItem, _pspec) -> None:
+        for css in ("open", "attention"):
+            self.dot.remove_css_class(css)
+        if item.status:
+            self.dot.add_css_class(item.status)
+
+    def _on_right_click(self, _gesture, _n_press: int, x: float, y: float) -> None:
+        self._sidebar.show_row_menu(self, x, y)
+
+
+class SessionSidebar(Gtk.Box):
+    """AdwToolbarView is a final type, so we wrap one instead of subclassing."""
+
+    __gsignals__ = {
+        "open-session": (GObject.SignalFlags.RUN_FIRST, None, (object, bool)),
+        "open-many": (GObject.SignalFlags.RUN_FIRST, None, (object,)),
+        "trash-many": (GObject.SignalFlags.RUN_FIRST, None, (object,)),
+    }
+
+    def __init__(self, store: SessionStore) -> None:
+        super().__init__(orientation=Gtk.Orientation.VERTICAL)
+        self.store = store
+        self._view = Adw.ToolbarView(vexpand=True)
+        self.append(self._view)
+        self._collapsed: set[tuple] = set()
+        self._selection_mode = False
+        self._selected: set[str] = set()
+        self._rows: dict[str, SessionRow] = {}
+
+        store.connect("refreshed", self._on_store_refreshed)
+
+        # -- header ---------------------------------------------------------
+        header = Adw.HeaderBar()
+        header.set_title_widget(Adw.WindowTitle(title="Sessions"))
+
+        self.select_btn = Gtk.ToggleButton(icon_name="object-select-symbolic")
+        self.select_btn.set_tooltip_text("Select sessions")
+        self.select_btn.connect("toggled", lambda b: self._set_selection_mode(b.get_active()))
+        header.pack_start(self.select_btn)
+
+        menu = Gio.Menu()
+        menu.append("Show hidden sessions", "win.show-hidden")
+        menu.append("Preferences", "win.preferences")
+        header.pack_end(Gtk.MenuButton(icon_name="open-menu-symbolic", menu_model=menu))
+
+        refresh_btn = Gtk.Button(icon_name="view-refresh-symbolic")
+        refresh_btn.set_tooltip_text("Refresh session list")
+        refresh_btn.set_action_name("win.refresh")
+        header.pack_end(refresh_btn)
+        self._view.add_top_bar(header)
+
+        # -- search + accordion controls --------------------------------------
+        self.search_entry = Gtk.SearchEntry(placeholder_text="Search sessions…", hexpand=True)
+        self.search_entry.connect("search-changed", lambda *_: self._invalidate())
+
+        collapse_all = Gtk.Button(icon_name="pan-up-symbolic")
+        collapse_all.add_css_class("flat")
+        collapse_all.set_tooltip_text("Collapse all groups")
+        collapse_all.connect("clicked", lambda *_: self._set_all_collapsed(True))
+
+        expand_all = Gtk.Button(icon_name="pan-down-symbolic")
+        expand_all.add_css_class("flat")
+        expand_all.set_tooltip_text("Expand all groups")
+        expand_all.connect("clicked", lambda *_: self._set_all_collapsed(False))
+
+        search_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=2)
+        search_box.set_margin_start(8)
+        search_box.set_margin_end(8)
+        search_box.set_margin_bottom(6)
+        search_box.append(self.search_entry)
+        search_box.append(collapse_all)
+        search_box.append(expand_all)
+        self._view.add_top_bar(search_box)
+
+        # -- list ------------------------------------------------------------
+        self.list = Gtk.ListBox()
+        self.list.set_selection_mode(Gtk.SelectionMode.NONE)
+        self.list.add_css_class("navigation-sidebar")
+        self.list.connect("row-activated", self._on_row_activated)
+        self.list.set_filter_func(self._filter_row)
+        self.list.set_header_func(self._header_func)
+
+        scrolled = Gtk.ScrolledWindow(child=self.list)
+        scrolled.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+        self._view.set_content(scrolled)
+
+        self._view.add_bottom_bar(self._build_action_bar())
+
+    # -- store sync ------------------------------------------------------------
+
+    def _on_store_refreshed(self, store: SessionStore, order_changed: bool) -> None:
+        self._selected &= set(store.sessions)
+        if order_changed:
+            self._rebuild_rows()
+        self._update_selection_label()
+        self._invalidate()
+
+    def _rebuild_rows(self) -> None:
+        self.list.remove_all()
+        self._rows = {}
+        for i in range(self.store.model.get_n_items()):
+            item = self.store.model.get_item(i)
+            row = SessionRow(item, self)
+            self._rows[item.session_id] = row
+            self.list.append(row)
+        self._apply_selection_to_rows()
+
+    def _apply_selection_to_rows(self) -> None:
+        for row in self._rows.values():
+            row.check.set_visible(self._selection_mode)
+            row.check.set_active(row.item.session_id in self._selected)
+
+    def focus_search(self) -> None:
+        self.search_entry.grab_focus()
+
+    # -- filtering / grouping ----------------------------------------------------
+
+    def _invalidate(self) -> None:
+        self.list.invalidate_filter()
+        self.list.invalidate_headers()
+
+    def _filter_row(self, row: SessionRow) -> bool:
+        query = self.search_entry.get_text().strip().lower()
+        if query:
+            return query in row.item.search_text  # search ignores collapsed state
+        return row.item.group_key not in self._collapsed
+
+    def _header_func(self, row: SessionRow, before: SessionRow | None) -> None:
+        if before is not None and before.item.group_key == row.item.group_key:
+            row.set_header(None)
+            return
+        group_key = row.item.group_key
+        header = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=4)
+        header.add_css_class("group-header")
+        arrow = Gtk.Image.new_from_icon_name(
+            "pan-end-symbolic" if group_key in self._collapsed else "pan-down-symbolic"
+        )
+        arrow.add_css_class("dim-label")
+        header.append(arrow)
+        if group_key == FAV_GROUP:
+            icon = Gtk.Image.new_from_icon_name("starred-symbolic")
+            icon.add_css_class("dim-label")
+            header.append(icon)
+        label = Gtk.Label(label=row.item.group_label, xalign=0.0, hexpand=True)
+        label.add_css_class("heading")
+        label.set_ellipsize(_ELLIPSIZE_END)
+        header.append(label)
+        count = Gtk.Label(label=str(self.store.group_counts.get(group_key, 0)))
+        count.add_css_class("dim-label")
+        count.add_css_class("caption")
+        header.append(count)
+
+        click = Gtk.GestureClick()
+        click.connect("pressed", self._on_header_clicked, group_key)
+        header.add_controller(click)
+        row.set_header(header)
+
+    def _on_header_clicked(self, _gesture, _n, _x, _y, group_key: tuple) -> None:
+        if group_key in self._collapsed:
+            self._collapsed.discard(group_key)
+        else:
+            self._collapsed.add(group_key)
+        self._invalidate()
+
+    def _set_all_collapsed(self, collapsed: bool) -> None:
+        self._collapsed = set(self.store.group_counts) if collapsed else set()
+        self._invalidate()
+
+    # -- activation ----------------------------------------------------------
+
+    def _on_row_activated(self, _list: Gtk.ListBox, row: SessionRow) -> None:
+        if self._selection_mode:
+            row.check.set_active(not row.check.get_active())
+            return
+        self.emit("open-session", row.item, False)
+
+    # -- context menu ------------------------------------------------------------
+
+    def show_row_menu(self, row: SessionRow, x: float, y: float) -> None:
+        session_id = row.item.session_id
+        variant = GLib.Variant("s", session_id)
+
+        def item(label: str, action: str) -> Gio.MenuItem:
+            menu_item = Gio.MenuItem.new(label, None)
+            menu_item.set_action_and_target_value(f"win.{action}", variant)
+            return menu_item
+
+        open_section = Gio.Menu()
+        open_section.append_item(item("Open", "open-session"))
+        if _GHOSTTY:
+            open_section.append_item(item("Open in Ghostty", "open-ghostty"))
+        open_section.append_item(item("Fork session", "fork-session"))
+
+        edit_section = Gio.Menu()
+        edit_section.append_item(item("Rename…", "rename-session"))
+        fav_label = (
+            "Remove from favorites" if self.store.state.is_favorite(session_id) else "Add to favorites"
+        )
+        edit_section.append_item(item(fav_label, "toggle-favorite"))
+        edit_section.append_item(item("Details…", "session-details"))
+        edit_section.append_item(item("Copy session ID", "copy-session-id"))
+        edit_section.append_item(item("Reveal transcript", "reveal-transcript"))
+
+        danger_section = Gio.Menu()
+        hide_label = "Unhide session" if self.store.state.is_hidden(session_id) else "Hide session"
+        danger_section.append_item(item(hide_label, "hide-session"))
+        danger_section.append_item(item("Move transcript to trash…", "trash-session"))
+
+        menu = Gio.Menu()
+        menu.append_section(None, open_section)
+        menu.append_section(None, edit_section)
+        menu.append_section(None, danger_section)
+
+        popover = Gtk.PopoverMenu.new_from_model(menu)
+        popover.set_parent(row)
+        popover.set_has_arrow(False)
+        rect = Gdk.Rectangle()
+        rect.x, rect.y, rect.width, rect.height = int(x), int(y), 1, 1
+        popover.set_pointing_to(rect)
+        popover.connect("closed", lambda p: GLib.idle_add(p.unparent))
+        popover.popup()
+
+    # -- selection mode ------------------------------------------------------------
+
+    def _build_action_bar(self) -> Gtk.ActionBar:
+        self.action_bar = Gtk.ActionBar()
+        self.action_bar.set_revealed(False)
+
+        self.sel_label = Gtk.Label(label="0 selected")
+        self.sel_label.add_css_class("dim-label")
+        self.action_bar.pack_start(self.sel_label)
+
+        all_btn = Gtk.Button(label="All")
+        all_btn.add_css_class("flat")
+        all_btn.set_tooltip_text("Select all (filtered) sessions")
+        all_btn.connect("clicked", lambda *_: self._select_all(True))
+        self.action_bar.pack_start(all_btn)
+
+        none_btn = Gtk.Button(label="None")
+        none_btn.add_css_class("flat")
+        none_btn.set_tooltip_text("Clear selection")
+        none_btn.connect("clicked", lambda *_: self._select_all(False))
+        self.action_bar.pack_start(none_btn)
+
+        for icon, tooltip, callback in (
+            ("user-trash-symbolic", "Move selected transcripts to trash…", self._bulk_trash),
+            ("view-conceal-symbolic", "Hide selected", self._bulk_hide),
+            ("non-starred-symbolic", "Remove selected from favorites", lambda: self._bulk_favorite(False)),
+            ("starred-symbolic", "Add selected to favorites", lambda: self._bulk_favorite(True)),
+            ("tab-new-symbolic", "Open selected in tabs", self._bulk_open),
+        ):
+            button = Gtk.Button(icon_name=icon)
+            button.add_css_class("flat")
+            button.set_tooltip_text(tooltip)
+            button.connect("clicked", lambda _b, cb=callback: cb())
+            self.action_bar.pack_end(button)
+        return self.action_bar
+
+    def _set_selection_mode(self, active: bool) -> None:
+        self._selection_mode = active
+        if not active:
+            self._selected.clear()
+        self._apply_selection_to_rows()
+        self.action_bar.set_revealed(active)
+        self._update_selection_label()
+
+    def on_row_check_toggled(self, row: SessionRow, active: bool) -> None:
+        if active:
+            self._selected.add(row.item.session_id)
+        else:
+            self._selected.discard(row.item.session_id)
+        self._update_selection_label()
+
+    def _update_selection_label(self) -> None:
+        self.sel_label.set_label(f"{len(self._selected)} selected")
+
+    def _select_all(self, selected: bool) -> None:
+        for row in self._rows.values():
+            if selected and not self._filter_row(row):
+                continue  # respect the current search filter
+            row.check.set_active(selected)
+
+    def _selected_items(self) -> list[SessionItem]:
+        return [
+            item for sid in self._selected if (item := self.store.get_item(sid)) is not None
+        ]
+
+    def _bulk_open(self) -> None:
+        self.emit("open-many", self._selected_items())
+
+    def _bulk_favorite(self, favorite: bool) -> None:
+        self.store.set_favorites([i.session_id for i in self._selected_items()], favorite)
+
+    def _bulk_hide(self) -> None:
+        self.store.hide_many([i.session_id for i in self._selected_items()])
+
+    def _bulk_trash(self) -> None:
+        items = self._selected_items()
+        if items:
+            self.emit("trash-many", items)
