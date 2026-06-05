@@ -26,6 +26,44 @@ _GHOSTTY = shutil.which("ghostty")
 _ELLIPSIZE_END = 3  # Pango.EllipsizeMode.END
 
 
+class GroupHeaderRow(Gtk.ListBoxRow):
+    """A real row acting as a group header, so it stays visible when the
+    group's session rows are filtered out (collapsed)."""
+
+    def __init__(self, group_key: tuple, group_label: str, count: int, collapsed: bool) -> None:
+        super().__init__()
+        self.group_key = group_key
+        self.set_selectable(False)
+
+        box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=4)
+        box.add_css_class("group-header")
+
+        self._arrow = Gtk.Image()
+        self._arrow.add_css_class("dim-label")
+        box.append(self._arrow)
+
+        if group_key == FAV_GROUP:
+            icon = Gtk.Image.new_from_icon_name("starred-symbolic")
+            icon.add_css_class("dim-label")
+            box.append(icon)
+
+        label = Gtk.Label(label=group_label, xalign=0.0, hexpand=True)
+        label.add_css_class("heading")
+        label.set_ellipsize(_ELLIPSIZE_END)
+        box.append(label)
+
+        count_label = Gtk.Label(label=str(count))
+        count_label.add_css_class("dim-label")
+        count_label.add_css_class("caption")
+        box.append(count_label)
+
+        self.set_child(box)
+        self.set_collapsed(collapsed)
+
+    def set_collapsed(self, collapsed: bool) -> None:
+        self._arrow.set_from_icon_name("pan-end-symbolic" if collapsed else "pan-down-symbolic")
+
+
 class SessionRow(Gtk.ListBoxRow):
     def __init__(self, item: SessionItem, sidebar: SessionSidebar) -> None:
         super().__init__()
@@ -144,6 +182,7 @@ class SessionSidebar(Gtk.Box):
         self._selection_mode = False
         self._selected: set[str] = set()
         self._rows: dict[str, SessionRow] = {}
+        self._header_rows: dict[tuple, GroupHeaderRow] = {}
 
         store.connect("refreshed", self._on_store_refreshed)
 
@@ -196,7 +235,6 @@ class SessionSidebar(Gtk.Box):
         self.list.add_css_class("navigation-sidebar")
         self.list.connect("row-activated", self._on_row_activated)
         self.list.set_filter_func(self._filter_row)
-        self.list.set_header_func(self._header_func)
 
         scrolled = Gtk.ScrolledWindow(child=self.list)
         scrolled.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
@@ -216,8 +254,20 @@ class SessionSidebar(Gtk.Box):
     def _rebuild_rows(self) -> None:
         self.list.remove_all()
         self._rows = {}
+        self._header_rows = {}
+        previous_group: tuple | None = None
         for i in range(self.store.model.get_n_items()):
             item = self.store.model.get_item(i)
+            if item.group_key != previous_group:
+                header = GroupHeaderRow(
+                    item.group_key,
+                    "Favorites" if item.group_key == FAV_GROUP else item.group_label,
+                    self.store.group_counts.get(item.group_key, 0),
+                    item.group_key in self._collapsed,
+                )
+                self._header_rows[item.group_key] = header
+                self.list.append(header)
+                previous_group = item.group_key
             row = SessionRow(item, self)
             self._rows[item.session_id] = row
             self.list.append(row)
@@ -235,58 +285,45 @@ class SessionSidebar(Gtk.Box):
 
     def _invalidate(self) -> None:
         self.list.invalidate_filter()
-        self.list.invalidate_headers()
 
-    def _filter_row(self, row: SessionRow) -> bool:
+    def _group_has_match(self, group_key: tuple, query: str) -> bool:
+        for i in range(self.store.model.get_n_items()):
+            item = self.store.model.get_item(i)
+            if item.group_key == group_key and query in item.search_text:
+                return True
+        return False
+
+    def _filter_row(self, row: Gtk.ListBoxRow) -> bool:
         query = self.search_entry.get_text().strip().lower()
+        if isinstance(row, GroupHeaderRow):
+            # Headers stay visible when collapsed; during search, only for groups with matches.
+            return self._group_has_match(row.group_key, query) if query else True
         if query:
             return query in row.item.search_text  # search ignores collapsed state
         return row.item.group_key not in self._collapsed
 
-    def _header_func(self, row: SessionRow, before: SessionRow | None) -> None:
-        if before is not None and before.item.group_key == row.item.group_key:
-            row.set_header(None)
-            return
-        group_key = row.item.group_key
-        header = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=4)
-        header.add_css_class("group-header")
-        arrow = Gtk.Image.new_from_icon_name(
-            "pan-end-symbolic" if group_key in self._collapsed else "pan-down-symbolic"
-        )
-        arrow.add_css_class("dim-label")
-        header.append(arrow)
-        if group_key == FAV_GROUP:
-            icon = Gtk.Image.new_from_icon_name("starred-symbolic")
-            icon.add_css_class("dim-label")
-            header.append(icon)
-        label = Gtk.Label(label=row.item.group_label, xalign=0.0, hexpand=True)
-        label.add_css_class("heading")
-        label.set_ellipsize(_ELLIPSIZE_END)
-        header.append(label)
-        count = Gtk.Label(label=str(self.store.group_counts.get(group_key, 0)))
-        count.add_css_class("dim-label")
-        count.add_css_class("caption")
-        header.append(count)
-
-        click = Gtk.GestureClick()
-        click.connect("pressed", self._on_header_clicked, group_key)
-        header.add_controller(click)
-        row.set_header(header)
-
-    def _on_header_clicked(self, _gesture, _n, _x, _y, group_key: tuple) -> None:
+    def _toggle_group(self, group_key: tuple) -> None:
         if group_key in self._collapsed:
             self._collapsed.discard(group_key)
         else:
             self._collapsed.add(group_key)
+        header = self._header_rows.get(group_key)
+        if header is not None:
+            header.set_collapsed(group_key in self._collapsed)
         self._invalidate()
 
     def _set_all_collapsed(self, collapsed: bool) -> None:
         self._collapsed = set(self.store.group_counts) if collapsed else set()
+        for group_key, header in self._header_rows.items():
+            header.set_collapsed(group_key in self._collapsed)
         self._invalidate()
 
     # -- activation ----------------------------------------------------------
 
-    def _on_row_activated(self, _list: Gtk.ListBox, row: SessionRow) -> None:
+    def _on_row_activated(self, _list: Gtk.ListBox, row: Gtk.ListBoxRow) -> None:
+        if isinstance(row, GroupHeaderRow):
+            self._toggle_group(row.group_key)
+            return
         if self._selection_mode:
             row.check.set_active(not row.check.get_active())
             return
