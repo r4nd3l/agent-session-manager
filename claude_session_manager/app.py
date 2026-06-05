@@ -22,7 +22,23 @@ _CSS = b"""
 }
 .status-dot.open { background-color: #2ec27e; }
 .status-dot.attention { background-color: #3584e4; }
-.group-header { padding: 8px 12px 2px 12px; }
+
+.group-header { padding: 10px 10px 4px 10px; }
+
+.count-badge {
+  background-color: alpha(currentColor, 0.1);
+  border-radius: 10px;
+  padding: 1px 8px;
+  font-size: 0.8em;
+}
+
+/* children connect to their group via a left guide line */
+row.session-child {
+  margin-left: 20px;
+  border-left: 2px solid alpha(currentColor, 0.15);
+  border-radius: 0 8px 8px 0;
+}
+row.session-child:hover { border-left-color: alpha(currentColor, 0.3); }
 """
 
 

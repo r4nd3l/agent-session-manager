@@ -35,26 +35,28 @@ class GroupHeaderRow(Gtk.ListBoxRow):
         self.group_key = group_key
         self.set_selectable(False)
 
-        box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=4)
+        box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
         box.add_css_class("group-header")
 
         self._arrow = Gtk.Image()
         self._arrow.add_css_class("dim-label")
         box.append(self._arrow)
 
-        if group_key == FAV_GROUP:
-            icon = Gtk.Image.new_from_icon_name("starred-symbolic")
-            icon.add_css_class("dim-label")
-            box.append(icon)
+        icon = Gtk.Image.new_from_icon_name(
+            "starred-symbolic" if group_key == FAV_GROUP else "folder-symbolic"
+        )
+        icon.add_css_class("dim-label")
+        box.append(icon)
 
-        label = Gtk.Label(label=group_label, xalign=0.0, hexpand=True)
-        label.add_css_class("heading")
+        label = Gtk.Label(label=group_label.upper(), xalign=0.0, hexpand=True)
+        label.add_css_class("caption-heading")
+        label.add_css_class("dim-label")
         label.set_ellipsize(_ELLIPSIZE_END)
         box.append(label)
 
         count_label = Gtk.Label(label=str(count))
+        count_label.add_css_class("count-badge")
         count_label.add_css_class("dim-label")
-        count_label.add_css_class("caption")
         box.append(count_label)
 
         self.set_child(box)
@@ -69,11 +71,12 @@ class SessionRow(Gtk.ListBoxRow):
         super().__init__()
         self.item = item
         self._sidebar = sidebar
+        self.add_css_class("session-child")  # indented, with a left guide line
 
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
         box.set_margin_top(8)
         box.set_margin_bottom(8)
-        box.set_margin_start(26)  # indent under the group header
+        box.set_margin_start(10)
         box.set_margin_end(12)
 
         top = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
