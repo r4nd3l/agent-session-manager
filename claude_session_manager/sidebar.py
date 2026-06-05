@@ -198,6 +198,7 @@ class SessionSidebar(Gtk.Box):
         menu = Gio.Menu()
         menu.append("Show hidden sessions", "win.show-hidden")
         menu.append("Preferences", "win.preferences")
+        menu.append("About Claude Session Manager", "win.about")
         header.pack_end(Gtk.MenuButton(icon_name="open-menu-symbolic", menu_model=menu))
 
         refresh_btn = Gtk.Button(icon_name="view-refresh-symbolic")
@@ -238,7 +239,19 @@ class SessionSidebar(Gtk.Box):
 
         scrolled = Gtk.ScrolledWindow(child=self.list)
         scrolled.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
-        self._view.set_content(scrolled)
+
+        empty = Adw.StatusPage(
+            icon_name="folder-symbolic",
+            title="No sessions found",
+            description="Run claude in a project directory first — "
+            "sessions will appear here automatically.",
+        )
+        empty.add_css_class("compact")
+
+        self._content_stack = Gtk.Stack()
+        self._content_stack.add_named(scrolled, "list")
+        self._content_stack.add_named(empty, "empty")
+        self._view.set_content(self._content_stack)
 
         self._view.add_bottom_bar(self._build_action_bar())
 
@@ -250,6 +263,7 @@ class SessionSidebar(Gtk.Box):
             self._rebuild_rows()
         self._update_selection_label()
         self._invalidate()
+        self._content_stack.set_visible_child_name("empty" if not store.sessions else "list")
 
     def _rebuild_rows(self) -> None:
         self.list.remove_all()

@@ -12,7 +12,7 @@ gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
 from gi.repository import Adw, Gio, GLib, Gtk  # noqa: E402
 
-from . import dialogs
+from . import __version__, dialogs
 from .models import SessionItem
 from .prefs import PreferencesDialog, apply_color_scheme
 from .sessions import Session
@@ -95,6 +95,7 @@ class MainWindow(Adw.ApplicationWindow):
             "close-tab": lambda *_: self._close_current_tab(),
             "next-tab": lambda *_: self.tab_view.select_next_page(),
             "prev-tab": lambda *_: self.tab_view.select_previous_page(),
+            "about": lambda *_: self._show_about(),
         }
         for name, callback in plain.items():
             action = Gio.SimpleAction(name=name)
@@ -358,7 +359,22 @@ class MainWindow(Adw.ApplicationWindow):
             do_trash,
         )
 
-    # -- preferences -------------------------------------------------------
+    # -- preferences / about -------------------------------------------------
+
+    def _show_about(self) -> None:
+        about = Adw.AboutDialog(
+            application_name="Claude Session Manager",
+            application_icon="eu.zengo.ClaudeSessionManager",
+            developer_name="Máté Molnár",
+            version=__version__,
+            license_type=Gtk.License.GPL_3_0,
+            comments=(
+                "Manage and resume Claude Code sessions.\n\n"
+                "Unofficial community tool — not affiliated with or endorsed by Anthropic."
+            ),
+            # TODO: set website/issue_url once the GitHub repository exists
+        )
+        about.present(self)
 
     def _show_preferences(self) -> None:
         PreferencesDialog(self.state, self._apply_settings_to_tabs).present(self)

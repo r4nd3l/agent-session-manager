@@ -7,9 +7,11 @@ APP_ID="eu.zengo.ClaudeSessionManager"
 
 ICON_DIR="$HOME/.local/share/icons/hicolor/scalable/apps"
 APPS_DIR="$HOME/.local/share/applications"
+METAINFO_DIR="$HOME/.local/share/metainfo"
 
-mkdir -p "$ICON_DIR" "$APPS_DIR"
+mkdir -p "$ICON_DIR" "$APPS_DIR" "$METAINFO_DIR"
 cp "$DATA_DIR/icons/$APP_ID.svg" "$ICON_DIR/"
+cp "$DATA_DIR/$APP_ID.metainfo.xml" "$METAINFO_DIR/"
 
 # Point Path= at wherever this checkout lives
 sed "s|^Path=.*|Path=$(dirname "$DATA_DIR")|" "$DATA_DIR/$APP_ID.desktop" > "$APPS_DIR/$APP_ID.desktop"

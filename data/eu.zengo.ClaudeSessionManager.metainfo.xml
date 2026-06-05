@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>eu.zengo.ClaudeSessionManager</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>GPL-3.0-or-later</project_license>
+
+  <name>Claude Session Manager</name>
+  <summary>Manage and resume Claude Code sessions</summary>
+
+  <description>
+    <p>
+      A native desktop companion for the Claude Code CLI. Browse every Claude Code
+      session on your machine in a sidebar grouped by project, give sessions custom
+      names, star favorites, and resume any of them in embedded terminal tabs.
+    </p>
+    <p>Features:</p>
+    <ul>
+      <li>Sessions grouped by project with favorites, search, and live updates</li>
+      <li>Tabbed embedded terminals resuming sessions in their project directory</li>
+      <li>Attention indicators when a background session produces output</li>
+      <li>Session details: message counts, models, token usage</li>
+      <li>Bulk selection for opening, starring, hiding, or trashing sessions</li>
+    </ul>
+    <p>
+      Unofficial community tool — not affiliated with or endorsed by Anthropic.
+      Claude Code's own data is never modified.
+    </p>
+  </description>
+
+  <launchable type="desktop-id">eu.zengo.ClaudeSessionManager.desktop</launchable>
+
+  <developer id="eu.zengo">
+    <name>Máté Molnár</name>
+  </developer>
+
+  <!-- TODO: set url tags once the GitHub repository exists
+  <url type="homepage">https://github.com/OWNER/claude-session-manager</url>
+  <url type="bugtracker">https://github.com/OWNER/claude-session-manager/issues</url>
+  -->
+
+  <content_rating type="oars-1.1"/>
+
+  <releases>
+    <release version="0.1.0" date="2026-06-05">
+      <description><p>Initial release.</p></description>
+    </release>
+  </releases>
+</component>

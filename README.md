@@ -1,6 +1,11 @@
 # Claude Session Manager
 
-Native GTK4/libadwaita desktop app to manage [Claude Code](https://claude.com/claude-code) sessions:
+Native GTK4/libadwaita desktop app to manage [Claude Code](https://claude.com/claude-code) sessions.
+
+> **Unofficial community tool.** Not affiliated with or endorsed by Anthropic.
+> It never modifies Claude Code's own data — all app state lives in its own config file.
+
+Features:
 
 - **Sidebar** lists every session found under `~/.claude/projects/`, grouped by project (collapsible headers, with collapse-all/expand-all buttons next to the search box), with a **Favorites** section pinned on top — star a session to move it there. A **search box** filters by name, project, preview, or session id, and the list **updates live** as sessions are created or written to.
 - Sessions can be given **custom names** (pencil icon). Names, favorites, and hidden sessions persist in `~/.config/claude-session-manager/state.json` — Claude's own session files are never modified.
@@ -23,13 +28,23 @@ Native GTK4/libadwaita desktop app to manage [Claude Code](https://claude.com/cl
 
 ## Requirements
 
-System packages (Ubuntu 24.04):
+Python ≥ 3.10, GTK 4, libadwaita ≥ 1.5, VTE (GTK 4 build), PyGObject — from your distro's packages:
 
 ```bash
+# Ubuntu / Debian
 sudo apt install python3-gi gir1.2-gtk-4.0 gir1.2-adw-1 gir1.2-vte-3.91
+
+# Fedora
+sudo dnf install python3-gobject gtk4 libadwaita vte291-gtk4
+
+# Arch
+sudo pacman -S python-gobject gtk4 libadwaita vte4
 ```
 
-Plus the `claude` CLI on your `PATH`.
+Plus the [`claude` CLI](https://claude.com/claude-code) on your `PATH`.
+
+> Installing with `pipx`? PyGObject comes from the system, so use
+> `pipx install --system-site-packages claude-session-manager`.
 
 ## Run
 
