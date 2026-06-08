@@ -308,7 +308,7 @@ class SessionSidebar(Gtk.Box):
             if key not in groups:
                 groups.append(key)
         for key in groups:
-            if key != FAV_GROUP and key not in self._known_groups:
+            if key not in self._known_groups:
                 self._collapsed.add(key)
         self._known_groups = set(groups)
 
