@@ -40,6 +40,17 @@
   <content_rating type="oars-1.1"/>
 
   <releases>
+    <release version="0.3.0" date="2026-06-08">
+      <description>
+        <p>Search, graceful close, and sidebar polish.</p>
+        <ul>
+          <li>Find bar inside each terminal tab (Ctrl+Shift+G)</li>
+          <li>Closing a tab asks Claude to exit cleanly (/exit) in the background</li>
+          <li>Copy session ID from the tab menu</li>
+          <li>Groups collapsed by default; session rows styled as cards</li>
+        </ul>
+      </description>
+    </release>
     <release version="0.2.0" date="2026-06-08">
       <description>
         <p>Tab and workflow improvements.</p>
