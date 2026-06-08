@@ -183,6 +183,7 @@ class SessionSidebar(Gtk.Box):
         self._view = Adw.ToolbarView(vexpand=True)
         self.append(self._view)
         self._collapsed: set[tuple] = set()
+        self._known_groups: set[tuple] = set()  # groups seen before (for collapse-by-default)
         self._selection_mode = False
         self._selected: set[str] = set()
         self._rows: dict[str, SessionRow] = {}
@@ -298,6 +299,19 @@ class SessionSidebar(Gtk.Box):
         self.list.remove_all()
         self._rows = {}
         self._header_rows = {}
+
+        # Collapse project groups by default — but only the first time each is
+        # seen, so manual expand/collapse choices survive live refreshes.
+        groups = []
+        for i in range(self.store.model.get_n_items()):
+            key = self.store.model.get_item(i).group_key
+            if key not in groups:
+                groups.append(key)
+        for key in groups:
+            if key != FAV_GROUP and key not in self._known_groups:
+                self._collapsed.add(key)
+        self._known_groups = set(groups)
+
         previous_group: tuple | None = None
         for i in range(self.store.model.get_n_items()):
             item = self.store.model.get_item(i)
