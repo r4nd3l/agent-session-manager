@@ -13,9 +13,14 @@ gi.require_version("Gtk", "4.0")
 gi.require_version("Vte", "3.91")
 from gi.repository import Gdk, GLib, GObject, Gtk, Pango, Vte  # noqa: E402
 
+# PCRE2 flags for the find bar: multiline, case-insensitive.
+_PCRE2_CASELESS = 0x00000008
+_PCRE2_MULTILINE = 0x00000400
+_SEARCH_FLAGS = _PCRE2_CASELESS | _PCRE2_MULTILINE
 
-class TerminalTab(Gtk.ScrolledWindow):
-    """Embeds Vte.Terminal and spawns the claude CLI into it."""
+
+class TerminalTab(Gtk.Box):
+    """Embeds Vte.Terminal (with a find bar) and spawns the claude CLI into it."""
 
     __gsignals__ = {
         # Emitted when the claude process exits (int = exit status).
@@ -29,7 +34,7 @@ class TerminalTab(Gtk.ScrolledWindow):
         fork: bool = False,
         settings: dict | None = None,
     ) -> None:
-        super().__init__()
+        super().__init__(orientation=Gtk.Orientation.VERTICAL)
         self.session_id = session_id
         self.fork = fork
         self._child_pid: int | None = None
@@ -40,9 +45,15 @@ class TerminalTab(Gtk.ScrolledWindow):
         self.terminal.set_scroll_on_keystroke(True)
         self.terminal.set_mouse_autohide(True)
         self.terminal.connect("child-exited", self._on_child_exited)
-        self.set_child(self.terminal)
 
-        # Ctrl+Shift+C / Ctrl+Shift+V, terminal-style
+        self._search_bar = self._build_search_bar()
+        self.append(self._search_bar)
+
+        scrolled = Gtk.ScrolledWindow(child=self.terminal, vexpand=True)
+        scrolled.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
+        self.append(scrolled)
+
+        # Ctrl+Shift+C / Ctrl+Shift+V / Ctrl+Shift+G, terminal-style
         keys = Gtk.EventControllerKey()
         keys.connect("key-pressed", self._on_key_pressed)
         self.terminal.add_controller(keys)
@@ -101,6 +112,73 @@ class TerminalTab(Gtk.ScrolledWindow):
     def _on_child_exited(self, terminal: Vte.Terminal, status: int) -> None:
         self.emit("process-exited", status)
 
+    # -- search bar --------------------------------------------------------
+
+    def _build_search_bar(self) -> Gtk.SearchBar:
+        bar = Gtk.SearchBar()
+        self._search_entry = Gtk.SearchEntry(hexpand=True, placeholder_text="Find in terminal…")
+        self._search_entry.connect("search-changed", self._on_search_changed)
+        self._search_entry.connect("activate", lambda *_: self._search_step(forward=False))
+        self._search_entry.connect("next-match", lambda *_: self._search_step(forward=True))
+        self._search_entry.connect("previous-match", lambda *_: self._search_step(forward=False))
+        self._search_entry.connect("stop-search", lambda *_: self.hide_search())
+
+        prev_btn = Gtk.Button(icon_name="go-up-symbolic", tooltip_text="Previous match")
+        prev_btn.connect("clicked", lambda *_: self._search_step(forward=False))
+        next_btn = Gtk.Button(icon_name="go-down-symbolic", tooltip_text="Next match")
+        next_btn.connect("clicked", lambda *_: self._search_step(forward=True))
+
+        box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+        box.append(self._search_entry)
+        box.append(prev_btn)
+        box.append(next_btn)
+        bar.set_child(box)
+        bar.connect_entry(self._search_entry)
+        bar.set_show_close_button(True)
+        bar.connect("notify::search-mode-enabled", self._on_search_mode_changed)
+        self.terminal.search_set_wrap_around(True)
+        return bar
+
+    def _on_search_mode_changed(self, bar: Gtk.SearchBar, _pspec) -> None:
+        if not bar.get_search_mode():  # cleared via the close button or Escape
+            self.terminal.search_set_regex(None, 0)
+            self.grab_terminal_focus()
+
+    def toggle_search(self) -> None:
+        if self._search_bar.get_search_mode():
+            self.hide_search()
+        else:
+            self._search_bar.set_search_mode(True)
+            self._search_entry.grab_focus()
+
+    def hide_search(self) -> None:
+        # _on_search_mode_changed clears the regex and refocuses the terminal.
+        self._search_bar.set_search_mode(False)
+
+    def _on_search_changed(self, entry: Gtk.SearchEntry) -> None:
+        query = entry.get_text()
+        if not query:
+            self.terminal.search_set_regex(None, 0)
+            return
+        pattern = GLib.Regex.escape_string(query, -1)
+        try:
+            regex = Vte.Regex.new_for_search(pattern, len(pattern.encode()), _SEARCH_FLAGS)
+        except GLib.Error:
+            return
+        self.terminal.search_set_regex(regex, 0)
+        self._search_step(forward=False)  # nearest match above the prompt
+
+    def _search_step(self, forward: bool) -> None:
+        if forward:
+            self.terminal.search_find_next()
+        else:
+            self.terminal.search_find_previous()
+
+    # -- graceful close ----------------------------------------------------
+
+    def feed_child_text(self, text: str) -> None:
+        self.terminal.feed_child(text.encode())
+
     # -- helpers -----------------------------------------------------------
 
     def has_running_command(self) -> bool:
@@ -140,5 +218,8 @@ class TerminalTab(Gtk.ScrolledWindow):
                 return True
             if keyval == Gdk.KEY_V:
                 self.terminal.paste_clipboard()
+                return True
+            if keyval == Gdk.KEY_G:
+                self.toggle_search()
                 return True
         return False

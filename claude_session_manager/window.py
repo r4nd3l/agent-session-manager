@@ -55,6 +55,7 @@ class MainWindow(Adw.ApplicationWindow):
         self.store = SessionStore(self.state)
         self._pages: dict[str, Adw.TabPage] = {}  # session_id -> open tab
         self._confirmed_closes: set[Adw.TabPage] = set()
+        self._closing_pages: dict[Adw.TabPage, int] = {}  # graceful close in progress -> attempts
         self._menu_page: Adw.TabPage | None = None
 
         self._install_actions()
@@ -68,6 +69,7 @@ class MainWindow(Adw.ApplicationWindow):
 
         tab_menu = Gio.Menu()
         tab_menu.append("Rename…", "win.rename-tab")
+        tab_menu.append("Copy session ID", "win.copy-tab-session-id")
         tab_menu.append("Close", "win.close-menu-tab")
         self.tab_view.set_menu_model(tab_menu)
 
@@ -134,6 +136,7 @@ class MainWindow(Adw.ApplicationWindow):
             "prev-tab": lambda *_: self.tab_view.select_previous_page(),
             "about": lambda *_: self._show_about(),
             "rename-tab": lambda *_: self._rename_tab(),
+            "copy-tab-session-id": lambda *_: self._copy_tab_session_id(),
             "close-menu-tab": lambda *_: self._close_menu_tab(),
             "toggle-sidebar": lambda *_: self.split.set_show_sidebar(
                 not self.split.get_show_sidebar()
@@ -275,8 +278,32 @@ class MainWindow(Adw.ApplicationWindow):
             self.tab_view.close_page(page)
 
     def _close_confirmed(self, page: Adw.TabPage) -> None:
+        """Force-close (terminate the child) — the graceful-close fallback."""
         self._confirmed_closes.add(page)
         self.tab_view.close_page(page)
+
+    def _graceful_close(self, page: Adw.TabPage) -> None:
+        """Ask Claude to exit cleanly (/exit), then close once the shell
+        returns. Falls back to a force-close after a timeout."""
+        tab = page.get_child()
+        if not isinstance(tab, TerminalTab):
+            self._close_confirmed(page)
+            return
+        self._closing_pages[page] = 0
+        tab.feed_child_text("/exit\n")
+        GLib.timeout_add(300, self._poll_graceful, page, tab)
+
+    def _poll_graceful(self, page: Adw.TabPage, tab: TerminalTab) -> bool:
+        if page not in self._closing_pages:
+            return GLib.SOURCE_REMOVE  # already closed
+        if not tab.has_running_command():
+            tab.feed_child_text("exit\n")  # close the shell → child-exited closes the tab
+            return GLib.SOURCE_REMOVE
+        self._closing_pages[page] += 1
+        if self._closing_pages[page] >= 40:  # ~12s safety net
+            self._close_confirmed(page)
+            return GLib.SOURCE_REMOVE
+        return GLib.SOURCE_CONTINUE
 
     def _sync_status(self, session_id: str) -> None:
         page = self._pages.get(session_id)
@@ -340,6 +367,14 @@ class MainWindow(Adw.ApplicationWindow):
             lambda name: page.set_title(name.strip() or page.get_title()),
         )
 
+    def _copy_tab_session_id(self) -> None:
+        page = self._menu_page or self.tab_view.get_selected_page()
+        if page is None:
+            return
+        tab = page.get_child()
+        if isinstance(tab, TerminalTab) and tab.session_id:
+            self.get_clipboard().set(tab.session_id)
+
     def _close_menu_tab(self) -> None:
         page = self._menu_page or self.tab_view.get_selected_page()
         if page is not None:
@@ -355,17 +390,19 @@ class MainWindow(Adw.ApplicationWindow):
             and page not in self._confirmed_closes
             and tab.has_running_command()
         ):
-            dialogs.confirm_dialog(
-                self,
-                "Close tab?",
-                f"A command is still running in “{page.get_title()}”.\n"
-                "Closing the tab will terminate it.",
-                "Close Tab",
-                lambda: self._close_confirmed(page),
-            )
+            if page not in self._closing_pages:  # don't re-prompt while exiting
+                dialogs.confirm_dialog(
+                    self,
+                    "Close session?",
+                    f"Claude Code in “{page.get_title()}” will be asked to exit (/exit) "
+                    "before the tab closes.",
+                    "Close",
+                    lambda: self._graceful_close(page),
+                )
             view.close_page_finish(page, False)  # keep the tab for now
             return True
         self._confirmed_closes.discard(page)
+        self._closing_pages.pop(page, None)
         session_id = self._session_id_of(page)
         if session_id:
             self._pages.pop(session_id, None)
