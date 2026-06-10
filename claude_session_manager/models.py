@@ -20,6 +20,7 @@ class SessionItem(GObject.Object):
     preview = GObject.Property(type=str, default="")
     favorite = GObject.Property(type=bool, default=False)
     status = GObject.Property(type=str, default="")  # "", "open", "attention"
+    waiting = GObject.Property(type=bool, default=False)  # Claude awaiting your reply
 
     def __init__(self, session: Session) -> None:
         super().__init__()

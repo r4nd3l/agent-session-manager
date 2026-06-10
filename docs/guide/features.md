@@ -14,6 +14,8 @@
   session by name, project, preview, or ID.
 - **Status dots**: green = open in a tab, blue = produced output while in the
   background.
+- **Waiting badge** — an amber **?** marks sessions where Claude's last message
+  was a question awaiting your reply, so you can spot what needs you at a glance.
 
 ![Sidebar with the Favorites section expanded](/img/sidebar-favorites.png)
 

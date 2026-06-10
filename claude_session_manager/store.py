@@ -136,6 +136,7 @@ class SessionStore(GObject.Object):
             "subtitle": f"{session.project_name} · {_relative_time(session.last_active)}",
             "preview": session.preview,
             "favorite": self.state.is_favorite(session.session_id),
+            "waiting": session.state == "waiting",
         }
         for prop, value in updates.items():
             if item.get_property(prop) != value:

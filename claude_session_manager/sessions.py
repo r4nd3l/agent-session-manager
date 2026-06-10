@@ -37,6 +37,7 @@ class Session:
     preview: str  # first user message, truncated
     mtime: float  # last activity (file mtime)
     size: int = 0  # transcript size in bytes
+    state: str = ""  # "" or "waiting" (Claude's last message was a question)
 
     @property
     def project_name(self) -> str:
@@ -91,6 +92,47 @@ def _scan_transcript(path: Path) -> tuple[str | None, str]:
     return cwd, preview
 
 
+_TAIL_BYTES = 64 * 1024
+
+
+def _tail_state(path: Path) -> str:
+    """Cheaply read the transcript's tail to classify its state.
+
+    Returns "waiting" when Claude's last message was a question with no user
+    reply after it — i.e. the session is waiting on you. Otherwise "".
+    """
+    try:
+        size = path.stat().st_size
+        with path.open("rb") as fh:
+            if size > _TAIL_BYTES:
+                fh.seek(-_TAIL_BYTES, os.SEEK_END)
+            blob = fh.read().decode("utf-8", errors="replace")
+    except OSError:
+        return ""
+
+    latest_role: str | None = None
+    latest_assistant_text = ""
+    for line in blob.splitlines():
+        try:
+            entry = json.loads(line)
+        except (json.JSONDecodeError, ValueError):
+            continue  # likely a partial first line from the tail window
+        if not isinstance(entry, dict):
+            continue
+        text = _extract_text((entry.get("message") or {}).get("content")).strip()
+        if not text:
+            continue
+        if entry.get("type") == "assistant":
+            latest_role = "assistant"
+            latest_assistant_text = text
+        elif entry.get("type") == "user" and not text.startswith("<"):
+            latest_role = "user"  # a real user reply, not a tool result / command
+
+    if latest_role == "assistant" and latest_assistant_text.rstrip().endswith("?"):
+        return "waiting"
+    return ""
+
+
 def discover_sessions() -> list[Session]:
     """All sessions under ~/.claude/projects, newest activity first."""
     sessions: list[Session] = []
@@ -117,6 +159,7 @@ def discover_sessions() -> list[Session]:
                     preview=preview,
                     mtime=stat.st_mtime,
                     size=stat.st_size,
+                    state=_tail_state(jsonl),
                 )
             )
     sessions.sort(key=lambda s: s.mtime, reverse=True)

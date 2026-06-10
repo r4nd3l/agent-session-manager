@@ -139,6 +139,53 @@ def test_configured_mcp_servers_missing_file(monkeypatch, tmp_path):
     assert configured_mcp_servers("/whatever") == []
 
 
+def test_tail_state_waiting(monkeypatch, tmp_path):
+    import claude_session_manager.sessions as sessions_mod
+
+    root = tmp_path / "projects" / "-home-u-proj"
+    root.mkdir(parents=True)
+    monkeypatch.setattr(sessions_mod, "CLAUDE_PROJECTS_DIR", tmp_path / "projects")
+
+    def write(name, last_assistant_text):
+        sid = name
+        lines = [
+            {"type": "user", "cwd": "/home/u/proj", "message": {"content": "do the thing"}},
+            {"type": "assistant", "message": {"role": "assistant", "model": "claude-opus-4-8",
+                                              "content": [{"type": "text", "text": last_assistant_text}]}},
+        ]
+        (root / f"{sid}.jsonl").write_text(
+            "\n".join(json.dumps(line) for line in lines), encoding="utf-8"
+        )
+
+    # valid UUID-shaped stems are required by discovery
+    waiting_id = "11111111-1111-1111-1111-111111111111"
+    done_id = "22222222-2222-2222-2222-222222222222"
+    write(waiting_id, "Which database should I use, Postgres or SQLite?")
+    write(done_id, "Done — all tests pass.")
+
+    states = {s.session_id: s.state for s in sessions_mod.discover_sessions()}
+    assert states[waiting_id] == "waiting"
+    assert states[done_id] == ""
+
+
+def test_tail_state_user_replied_after_question(monkeypatch, tmp_path):
+    import claude_session_manager.sessions as sessions_mod
+
+    root = tmp_path / "projects" / "-home-u-proj"
+    root.mkdir(parents=True)
+    monkeypatch.setattr(sessions_mod, "CLAUDE_PROJECTS_DIR", tmp_path / "projects")
+    sid = "33333333-3333-3333-3333-333333333333"
+    lines = [
+        {"type": "assistant", "message": {"content": [{"type": "text", "text": "Which one?"}]}},
+        {"type": "user", "cwd": "/home/u/proj", "message": {"content": "the second one"}},
+    ]
+    (root / f"{sid}.jsonl").write_text(
+        "\n".join(json.dumps(line) for line in lines), encoding="utf-8"
+    )
+    state = next(s.state for s in sessions_mod.discover_sessions() if s.session_id == sid)
+    assert state == ""  # user already replied → not waiting
+
+
 def test_export_markdown(projects_dir):
     _root, ids = projects_dir
     session = next(s for s in discover_sessions() if s.session_id == ids["alpha1"])

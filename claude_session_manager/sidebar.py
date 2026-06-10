@@ -95,6 +95,11 @@ class SessionRow(Gtk.ListBoxRow):
         name_label.add_css_class("heading")
         top.append(name_label)
 
+        waiting = Gtk.Image(icon_name="dialog-question-symbolic", valign=Gtk.Align.CENTER)
+        waiting.add_css_class("waiting-badge")
+        waiting.set_tooltip_text("Claude is waiting for your reply")
+        top.append(waiting)
+
         star = Gtk.Button(valign=Gtk.Align.CENTER)
         star.add_css_class("flat")
         star.connect(
@@ -143,6 +148,7 @@ class SessionRow(Gtk.ListBoxRow):
             "favorite", star, "tooltip-text", flags,
             lambda _b, fav: "Remove from favorites" if fav else "Add to favorites",
         )
+        item.bind_property("waiting", waiting, "visible", flags)
 
         # Status dot needs CSS-class updates: plain signal, detached on unroot.
         self._status_handler = item.connect("notify::status", self._on_status_changed)

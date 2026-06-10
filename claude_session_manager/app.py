@@ -30,6 +30,9 @@ _CSS = b"""
 
 .group-header { padding: 10px 10px 4px 10px; }
 
+/* "Claude is waiting for your reply" badge on a session row */
+.waiting-badge { color: #e5a50a; }
+
 /* make the active tab clearly stand out from inactive ones */
 tabbar tab:checked {
   background-color: alpha(#D97757, 0.22);
