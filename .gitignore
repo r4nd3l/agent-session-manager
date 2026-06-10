@@ -8,3 +8,6 @@ build/
 .venv/
 .claude/
 00_Temp.md
+node_modules/
+docs/.vitepress/dist/
+docs/.vitepress/cache/
