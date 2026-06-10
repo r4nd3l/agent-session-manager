@@ -60,7 +60,7 @@ sudo pacman -S python-gobject gtk4 libadwaita vte4
 Plus the [`claude` CLI](https://claude.com/claude-code) on your `PATH`.
 
 > Installing with `pipx`? PyGObject comes from the system, so use
-> `pipx install --system-site-packages claude-session-manager`.
+> `pipx install --system-site-packages claude-session-manager-gtk`.
 
 ## Install
 
@@ -109,7 +109,7 @@ scripts/
 ## Publishing (maintainers)
 
 Publishing a GitHub Release triggers `.github/workflows/publish-pypi.yml`, which
-builds the package and uploads it to [PyPI](https://pypi.org/project/claude-session-manager/)
+builds the package and uploads it to [PyPI](https://pypi.org/project/claude-session-manager-gtk/)
 via **trusted publishing** (OIDC — no API tokens). One-time setup on PyPI:
 add a *Trusted Publisher* for the project with owner `r4nd3l`, repository
 `claude-session-manager`, and workflow `publish-pypi.yml`.

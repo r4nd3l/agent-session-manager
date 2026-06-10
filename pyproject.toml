@@ -1,5 +1,7 @@
 [project]
-name = "claude-session-manager"
+# PyPI distribution name ("claude-session-manager" is taken by an unrelated CLI
+# tool). The import package and the installed command stay claude-session-manager.
+name = "claude-session-manager-gtk"
 version = "0.6.0"
 description = "Native GTK4 GUI to manage and resume Claude Code sessions"
 readme = "README.md"
