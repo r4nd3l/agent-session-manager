@@ -23,6 +23,9 @@ from .terminal import TerminalTab
 
 _GHOSTTY = shutil.which("ghostty")
 
+# Quiet period before a background tab is considered "idle" / finished.
+_IDLE_NOTIFY_MS = 4000
+
 # Tab status dots, matching the sidebar (.status-dot CSS in app.py).
 _STATUS_COLORS = {"open": "#2ec27e", "attention": "#3584e4"}
 _status_icon_cache: dict[str, Gio.Icon] = {}
@@ -58,6 +61,7 @@ class MainWindow(Adw.ApplicationWindow):
         self._closing_pages: dict[Adw.TabPage, int] = {}  # graceful close in progress -> attempts
         self._menu_page: Adw.TabPage | None = None
         self._base_titles: dict[Adw.TabPage, str] = {}  # fork/new tab title without emoji
+        self._idle_sources: dict[Adw.TabPage, int] = {}  # pending idle-notify timers
 
         self._install_actions()
         self._install_shortcuts()
@@ -347,17 +351,22 @@ class MainWindow(Adw.ApplicationWindow):
         return None
 
     def _on_terminal_output(self, _terminal, page: Adw.TabPage) -> None:
-        if self.tab_view.get_selected_page() is not page and not page.get_needs_attention():
+        if self.tab_view.get_selected_page() is page:
+            return
+        if not page.get_needs_attention():
             page.set_needs_attention(True)
             self._apply_tab_status(page)
             session_id = self._session_id_of(page)
             if session_id:
                 self._sync_status(session_id)
+        if self.state.get_setting("notify_idle"):
+            self._schedule_idle_notify(page)
 
     def _on_selected_page_changed(self, view: Adw.TabView, _pspec) -> None:
         page = view.get_selected_page()
         if page is None:
             return
+        self._cancel_idle(page)  # foreground now; no "finished" notification
         if page.get_needs_attention():
             page.set_needs_attention(False)
             self._apply_tab_status(page)
@@ -366,6 +375,37 @@ class MainWindow(Adw.ApplicationWindow):
                 self._sync_status(session_id)
         if isinstance(page.get_child(), TerminalTab):
             GLib.idle_add(page.get_child().grab_terminal_focus)
+
+    # -- idle notifications --------------------------------------------------
+
+    def _schedule_idle_notify(self, page: Adw.TabPage) -> None:
+        self._cancel_idle(page)
+        self._idle_sources[page] = GLib.timeout_add(_IDLE_NOTIFY_MS, self._fire_idle_notify, page)
+
+    def _cancel_idle(self, page: Adw.TabPage) -> None:
+        source = self._idle_sources.pop(page, None)
+        if source is not None:
+            GLib.source_remove(source)
+
+    def _fire_idle_notify(self, page: Adw.TabPage) -> bool:
+        self._idle_sources.pop(page, None)
+        if page is self.tab_view.get_selected_page() or not self.state.get_setting("notify_idle"):
+            return GLib.SOURCE_REMOVE
+        app = self.get_application()
+        if app is not None:
+            session_id = self._session_id_of(page) or ""
+            notification = Gio.Notification.new(page.get_title())
+            notification.set_body("Claude finished responding.")
+            notification.set_default_action_and_target_value(
+                "app.focus-session", GLib.Variant("s", session_id)
+            )
+            app.send_notification(session_id or page.get_title(), notification)
+        return GLib.SOURCE_REMOVE
+
+    def focus_session(self, session_id: str) -> None:
+        page = self._pages.get(session_id)
+        if page is not None:
+            self.tab_view.set_selected_page(page)
 
     # -- tab rename / menu ---------------------------------------------------
 
@@ -446,6 +486,7 @@ class MainWindow(Adw.ApplicationWindow):
         self._confirmed_closes.discard(page)
         self._closing_pages.pop(page, None)
         self._base_titles.pop(page, None)
+        self._cancel_idle(page)
         session_id = self._session_id_of(page)
         if session_id:
             self._pages.pop(session_id, None)

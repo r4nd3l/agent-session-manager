@@ -39,6 +39,16 @@ def test_parse_details_counts(projects_dir):
     assert details.file_size > 0
 
 
+def test_parse_details_collects_recent_messages(projects_dir):
+    _root, ids = projects_dir
+    session = next(s for s in discover_sessions() if s.session_id == ids["alpha1"])
+    details = parse_details(session.jsonl_path)
+    # First user text message + the assistant's text reply; tool_result is skipped.
+    assert ("user", "Build the alpha feature") in details.messages
+    assert ("assistant", "Hello!") in details.messages
+    assert all(role in ("user", "assistant") for role, _ in details.messages)
+
+
 def test_parse_details_handles_garbage(tmp_path):
     bad = tmp_path / "bad.jsonl"
     bad.write_text("not json\n{\"type\": 12}\n[]\n", encoding="utf-8")

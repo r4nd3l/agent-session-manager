@@ -126,6 +126,18 @@ def details_dialog(parent: Gtk.Widget, session: Session, title: str) -> None:
         )
         add("Transcript size", format_size(details.file_size))
         page.add(info)
+
+        if details.messages:
+            recent = Adw.PreferencesGroup(title="Recent activity")
+            for role, text in details.messages:
+                row = Adw.ActionRow(
+                    title="You" if role == "user" else "Claude",
+                    subtitle=text,
+                )
+                row.set_property("subtitle-lines", 0)  # wrap, no truncation
+                row.add_css_class("property")
+                recent.add(row)
+            page.add(recent)
         return GLib.SOURCE_REMOVE
 
     def work() -> None:

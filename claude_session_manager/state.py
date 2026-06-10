@@ -20,6 +20,7 @@ DEFAULT_SETTINGS = {
     "font": "",  # empty = VTE default
     "scrollback": 10_000,
     "color_scheme": "system",  # system | light | dark
+    "notify_idle": True,  # notify when a background session goes quiet
 }
 
 

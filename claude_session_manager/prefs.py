@@ -72,6 +72,16 @@ class PreferencesDialog(Adw.PreferencesDialog):
         appearance_group.add(scheme_row)
         page.add(appearance_group)
 
+        notif_group = Adw.PreferencesGroup(title="Notifications")
+        self._notify_row = Adw.SwitchRow(
+            title="Notify when a session goes idle",
+            subtitle="Desktop notification when a background tab stops producing output",
+        )
+        self._notify_row.set_active(bool(state.get_setting("notify_idle")))
+        self._notify_row.connect("notify::active", self._on_notify_changed)
+        notif_group.add(self._notify_row)
+        page.add(notif_group)
+
         self.add(page)
 
     def _on_font_changed(self, button: Gtk.FontDialogButton, _pspec) -> None:
@@ -92,4 +102,8 @@ class PreferencesDialog(Adw.PreferencesDialog):
         key = _SCHEMES[row.get_selected()][0]
         self._state.set_setting("color_scheme", key)
         apply_color_scheme(key)
+        self._on_change()
+
+    def _on_notify_changed(self, row: Adw.SwitchRow, _pspec) -> None:
+        self._state.set_setting("notify_idle", row.get_active())
         self._on_change()

@@ -10,7 +10,7 @@ import gi
 gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
 gi.require_version("Vte", "3.91")
-from gi.repository import Adw, Gdk, Gtk  # noqa: E402
+from gi.repository import Adw, Gdk, Gio, GLib, Gtk  # noqa: E402
 
 from .window import MainWindow
 
@@ -73,6 +73,19 @@ class App(Adw.Application):
         )
         if _BUNDLED_ICONS.is_dir():  # running from source; installed icons live in the system theme
             Gtk.IconTheme.get_for_display(display).add_search_path(str(_BUNDLED_ICONS))
+
+        focus = Gio.SimpleAction.new("focus-session", GLib.VariantType("s"))
+        focus.connect("activate", self._on_focus_session)
+        self.add_action(focus)
+
+    def _on_focus_session(self, _action, param: GLib.Variant) -> None:
+        window = self.get_active_window()
+        if window is None:
+            return
+        window.present()
+        session_id = param.get_string()
+        if session_id and hasattr(window, "focus_session"):
+            window.focus_session(session_id)
 
     def do_activate(self) -> None:
         window = self.get_active_window()

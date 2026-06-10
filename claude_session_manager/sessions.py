@@ -5,9 +5,13 @@ from __future__ import annotations
 import json
 import os
 import re
+from collections import deque
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
+
+# How many recent messages the details dialog peeks at.
+PEEK_MESSAGES = 12
 
 # Override with CSM_PROJECTS_DIR for demos and development.
 CLAUDE_PROJECTS_DIR = Path(
@@ -132,12 +136,15 @@ class SessionDetails:
     first_timestamp: str | None = None
     last_timestamp: str | None = None
     file_size: int = 0
+    # Recent (role, text) messages, oldest first, for the transcript peek.
+    messages: list[tuple[str, str]] = field(default_factory=list)
 
 
 def parse_details(path: Path) -> SessionDetails:
     """Scan the whole transcript. Run off the main thread for big files."""
     details = SessionDetails()
     models: set[str] = set()
+    recent: deque[tuple[str, str]] = deque(maxlen=PEEK_MESSAGES)
     try:
         details.file_size = path.stat().st_size
     except OSError:
@@ -159,12 +166,11 @@ def parse_details(path: Path) -> SessionDetails:
                 message = entry.get("message") or {}
                 content = message.get("content")
                 if etype == "user":
-                    if isinstance(content, str):
+                    text = _extract_text(content).strip()
+                    # Skip tool results and harness-injected content
+                    if text and not text.startswith("<"):
                         details.user_messages += 1
-                    elif isinstance(content, list) and any(
-                        isinstance(b, dict) and b.get("type") == "text" for b in content
-                    ):
-                        details.user_messages += 1
+                        recent.append(("user", " ".join(text.split())[:500]))
                 elif etype == "assistant":
                     details.assistant_messages += 1
                     model = message.get("model")
@@ -178,7 +184,11 @@ def parse_details(path: Path) -> SessionDetails:
                         details.tool_calls += sum(
                             1 for b in content if isinstance(b, dict) and b.get("type") == "tool_use"
                         )
+                    text = _extract_text(content).strip()
+                    if text:
+                        recent.append(("assistant", " ".join(text.split())[:500]))
     except OSError:
         pass
     details.models = sorted(models)
+    details.messages = list(recent)
     return details
