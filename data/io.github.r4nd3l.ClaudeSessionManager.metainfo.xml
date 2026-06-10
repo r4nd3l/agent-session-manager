@@ -40,6 +40,16 @@
   <content_rating type="oars-1.1"/>
 
   <releases>
+    <release version="0.7.0" date="2026-06-10">
+      <description>
+        <p>Insight, export, and packaging.</p>
+        <ul>
+          <li>Waiting badge for sessions where Claude asked a question</li>
+          <li>Export a session transcript as Markdown</li>
+          <li>Now on PyPI: pipx install claude-session-manager-gtk</li>
+        </ul>
+      </description>
+    </release>
     <release version="0.6.0" date="2026-06-10">
       <description>
         <p>Navigation and configuration.</p>
