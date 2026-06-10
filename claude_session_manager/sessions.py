@@ -205,6 +205,68 @@ def parse_details(path: Path) -> SessionDetails:
     return details
 
 
+def export_markdown(path: Path, title: str, session_id: str, cwd: str | None) -> str:
+    """Render a whole transcript to Markdown. Run off the main thread."""
+    out: list[str] = [f"# {title}", ""]
+    meta = [f"- **Session:** `{session_id}`"]
+    if cwd:
+        meta.append(f"- **Project:** `{cwd}`")
+    first_ts: str | None = None
+    last_ts: str | None = None
+    turns: list[str] = []
+
+    try:
+        with path.open("r", encoding="utf-8", errors="replace") as fh:
+            for line in fh:
+                try:
+                    entry = json.loads(line)
+                except (json.JSONDecodeError, ValueError):
+                    continue
+                if not isinstance(entry, dict):
+                    continue
+                ts = entry.get("timestamp")
+                if isinstance(ts, str):
+                    first_ts = first_ts or ts
+                    last_ts = ts
+                etype = entry.get("type")
+                message = entry.get("message") or {}
+                content = message.get("content")
+                if etype == "user":
+                    text = _extract_text(content).strip()
+                    if text and not text.startswith("<"):
+                        turns.append(f"### You\n\n{text}")
+                elif etype == "assistant":
+                    text = _extract_text(content).strip()
+                    tools = []
+                    if isinstance(content, list):
+                        tools = [
+                            b["name"]
+                            for b in content
+                            if isinstance(b, dict) and b.get("type") == "tool_use" and b.get("name")
+                        ]
+                    if not text and not tools:
+                        continue
+                    block = "### Claude"
+                    if text:
+                        block += f"\n\n{text}"
+                    if tools:
+                        used = ", ".join(f"`{name}`" for name in tools)
+                        block += f"\n\n*Used {used}*"
+                    turns.append(block)
+    except OSError:
+        pass
+
+    if first_ts:
+        meta.append(f"- **Created:** {first_ts}")
+    if last_ts:
+        meta.append(f"- **Last activity:** {last_ts}")
+    out.extend(meta)
+    out.append("\n---\n")
+    out.append("\n\n".join(turns) if turns else "_No messages._")
+    out.append("")
+    return "\n".join(out)
+
+
 def configured_mcp_servers(cwd: str | None) -> list[str]:
     """MCP servers available to a session: global servers from ~/.claude.json
     plus any configured for the session's project directory. Read-only."""

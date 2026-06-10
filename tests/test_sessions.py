@@ -3,6 +3,7 @@ import json
 from claude_session_manager.sessions import (
     configured_mcp_servers,
     discover_sessions,
+    export_markdown,
     parse_details,
     read_mcp_config,
 )
@@ -136,6 +137,17 @@ def test_configured_mcp_servers_missing_file(monkeypatch, tmp_path):
 
     monkeypatch.setattr(sessions_mod, "CLAUDE_CONFIG", tmp_path / "nope.json")
     assert configured_mcp_servers("/whatever") == []
+
+
+def test_export_markdown(projects_dir):
+    _root, ids = projects_dir
+    session = next(s for s in discover_sessions() if s.session_id == ids["alpha1"])
+    md = export_markdown(session.jsonl_path, "Alpha feature", session.session_id, session.cwd)
+    assert md.startswith("# Alpha feature")
+    assert f"`{session.session_id}`" in md
+    assert "### You\n\nBuild the alpha feature" in md
+    assert "### Claude\n\nHello!" in md
+    assert "*Used `Bash`*" in md  # tool call noted
 
 
 def test_parse_details_handles_garbage(tmp_path):

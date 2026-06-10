@@ -416,6 +416,7 @@ class SessionSidebar(Gtk.Box):
         edit_section.append_item(item(fav_label, "toggle-favorite"))
         edit_section.append_item(item("Details…", "session-details"))
         edit_section.append_item(item("Copy session ID", "copy-session-id"))
+        edit_section.append_item(item("Export as Markdown…", "export-session"))
         edit_section.append_item(item("Reveal transcript", "reveal-transcript"))
 
         danger_section = Gio.Menu()

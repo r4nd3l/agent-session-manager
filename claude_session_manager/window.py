@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import shutil
 import subprocess
+import threading
 from pathlib import Path
 
 import gi
@@ -15,7 +16,7 @@ from gi.repository import Adw, Gio, GLib, GObject, Gtk  # noqa: E402
 from . import __version__, dialogs
 from .models import SessionItem
 from .prefs import PreferencesDialog, apply_color_scheme
-from .sessions import Session
+from .sessions import Session, export_markdown
 from .sidebar import SessionSidebar
 from .state import AppState
 from .store import SessionStore
@@ -203,6 +204,7 @@ class MainWindow(Adw.ApplicationWindow):
             "toggle-favorite": lambda _a, p: self.store.toggle_favorite(p.get_string()),
             "copy-session-id": lambda _a, p: self.get_clipboard().set(p.get_string()),
             "reveal-transcript": self._on_reveal_transcript,
+            "export-session": self._on_export_session,
             "session-details": self._on_session_details,
             "hide-session": self._on_hide_session,
             "trash-session": self._on_trash_session,
@@ -594,6 +596,34 @@ class MainWindow(Adw.ApplicationWindow):
             return
         launcher = Gtk.FileLauncher.new(Gio.File.new_for_path(str(session.jsonl_path)))
         launcher.open_containing_folder(self, None, None)
+
+    def _on_export_session(self, _action, param: GLib.Variant) -> None:
+        session = self._session_for(param)
+        if session is None:
+            return
+        title = self.store.display_name(session)
+        safe = "".join(c if c.isalnum() or c in " -_" else "_" for c in title).strip() or "session"
+        dialog = Gtk.FileDialog(title="Export session as Markdown", initial_name=f"{safe}.md")
+        dialog.save(self, None, lambda d, r: self._on_export_save(d, r, session, title))
+
+    def _on_export_save(self, dialog: Gtk.FileDialog, result, session: Session, title: str) -> None:
+        try:
+            gfile = dialog.save_finish(result)
+        except GLib.Error:
+            return  # cancelled
+        dest = gfile.get_path()
+
+        def work() -> None:
+            error = None
+            try:
+                text = export_markdown(session.jsonl_path, title, session.session_id, session.cwd)
+                Path(dest).write_text(text, encoding="utf-8")
+            except OSError as err:
+                error = str(err)
+            if error:
+                GLib.idle_add(dialogs.error_dialog, self, "Export failed", error)
+
+        threading.Thread(target=work, daemon=True).start()
 
     def _on_session_details(self, _action, param: GLib.Variant) -> None:
         session = self._session_for(param)
