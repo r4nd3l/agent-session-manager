@@ -28,6 +28,15 @@ sudo pacman -S python-gobject gtk4 libadwaita vte4
 
 ## Install
 
+### Arch Linux — AUR
+
+Available on the [AUR](https://aur.archlinux.org/packages/claude-session-manager)
+as `claude-session-manager`:
+
+```bash
+yay -S claude-session-manager   # or: paru -S claude-session-manager
+```
+
 ### Debian / Ubuntu — `.deb`
 
 Grab the latest `.deb` from the
@@ -39,6 +48,19 @@ sudo apt install ./claude-session-manager_*_all.deb
 ```
 
 It then appears in your app grid as **Claude Session Manager**.
+
+### PyPI — `pipx`
+
+Published as
+[`claude-session-manager-gtk`](https://pypi.org/project/claude-session-manager-gtk/).
+The GTK/VTE bindings come from your system, so install with system site
+packages (and make sure the [requirements](#requirements) above are present):
+
+```bash
+pipx install --system-site-packages claude-session-manager-gtk
+```
+
+The installed command is `claude-session-manager`.
 
 ### From source
 

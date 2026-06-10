@@ -1,6 +1,9 @@
 # Claude Session Manager
 
 [![CI](https://github.com/r4nd3l/claude-session-manager/actions/workflows/ci.yml/badge.svg)](https://github.com/r4nd3l/claude-session-manager/actions/workflows/ci.yml)
+[![PyPI](https://img.shields.io/pypi/v/claude-session-manager-gtk?label=PyPI)](https://pypi.org/project/claude-session-manager-gtk/)
+[![AUR](https://img.shields.io/aur/version/claude-session-manager?label=AUR)](https://aur.archlinux.org/packages/claude-session-manager)
+[![Release](https://img.shields.io/github/v/release/r4nd3l/claude-session-manager?label=release)](https://github.com/r4nd3l/claude-session-manager/releases/latest)
 
 Native GTK4/libadwaita desktop app to manage [Claude Code](https://claude.com/claude-code) sessions.
 

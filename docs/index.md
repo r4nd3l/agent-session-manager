@@ -40,3 +40,25 @@ features:
     title: Native GTK4
     details: Built with GTK4, libadwaita, and VTE. Installs as a .deb or runs from source. GPL-3.0, open source.
 ---
+
+## Install
+
+::: code-group
+
+```bash [Arch (AUR)]
+yay -S claude-session-manager
+```
+
+```bash [Debian / Ubuntu]
+# from the latest GitHub release
+sudo apt install ./claude-session-manager_*_all.deb
+```
+
+```bash [pipx (any distro)]
+pipx install --system-site-packages claude-session-manager-gtk
+```
+
+:::
+
+See [Getting Started](/guide/getting-started) for system requirements and
+from-source instructions. The installed command is `claude-session-manager`.
