@@ -40,6 +40,17 @@
   <content_rating type="oars-1.1"/>
 
   <releases>
+    <release version="0.5.0" date="2026-06-10">
+      <description>
+        <p>Insight into sessions.</p>
+        <ul>
+          <li>Transcript peek: recent messages in the session details</li>
+          <li>Desktop notifications when a background session goes idle</li>
+          <li>MCP servers and per-session MCP usage in the details dialog</li>
+          <li>Online documentation site</li>
+        </ul>
+      </description>
+    </release>
     <release version="0.4.0" date="2026-06-09">
       <description>
         <p>Tab usability improvements.</p>

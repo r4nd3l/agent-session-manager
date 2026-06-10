@@ -19,7 +19,8 @@ Features:
 - **In-terminal search** with a find bar (`Ctrl+Shift+G`) over the tab's scrollback.
 - **Status dots** in both the sidebar and on each open tab: green = open, blue = output arrived in a background tab.
 - **Tabs** can be renamed, given an emoji prefix, or have their session ID copied (right-click → Rename… / Set emoji… / Copy session ID); renaming a session's tab updates its name everywhere. A **close-all button** appears when more than one tab is open, and the **sidebar toggles** with the header button or `F9`. **Shift+Enter** inserts a newline in Claude's prompt.
-- **Right-click a session** for the full action set: open, open in [Ghostty](https://ghostty.org) (external window — Ghostty can't be embedded), fork (`--fork-session`), rename, favorite, details (messages/models/tokens), copy session id, reveal transcript, hide, or move the transcript to trash.
+- **Right-click a session** for the full action set: open, open in [Ghostty](https://ghostty.org) (external window — Ghostty can't be embedded), fork (`--fork-session`), rename, favorite, **details** (messages/models/tokens, a peek at recent messages, and MCP servers/usage), copy session id, reveal transcript, hide, or move the transcript to trash.
+- **Desktop notifications** when a background session goes quiet after producing output — click to jump to that tab (toggle in Preferences).
 - **Select mode** (checkbox button in the sidebar header) for bulk actions: open, star, hide, or trash many sessions at once.
 - **New session** (tab icon in the header) asks for a project folder and starts a fresh `claude` there.
 - **Preferences** (menu → Preferences, or `Ctrl+,`): terminal font, scrollback, color scheme.
@@ -63,7 +64,7 @@ Plus the [`claude` CLI](https://claude.com/claude-code) on your `PATH`.
 **Debian/Ubuntu — .deb package** (from the [latest release](https://github.com/r4nd3l/claude-session-manager/releases/latest)):
 
 ```bash
-sudo apt install ./claude-session-manager_0.4.0_all.deb
+sudo apt install ./claude-session-manager_0.5.0_all.deb
 ```
 
 Dependencies are pulled in automatically; the app appears in your app grid as "Claude Session Manager".
