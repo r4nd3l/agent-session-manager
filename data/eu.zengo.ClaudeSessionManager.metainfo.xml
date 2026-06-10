@@ -40,6 +40,17 @@
   <content_rating type="oars-1.1"/>
 
   <releases>
+    <release version="0.6.0" date="2026-06-10">
+      <description>
+        <p>Navigation and configuration.</p>
+        <ul>
+          <li>Quick switcher (Ctrl+Shift+K) to jump to any session</li>
+          <li>New Session remembers your last folder; resizable sidebar</li>
+          <li>Read-only MCP servers browser</li>
+          <li>Drag to reorder tabs</li>
+        </ul>
+      </description>
+    </release>
     <release version="0.5.0" date="2026-06-10">
       <description>
         <p>Insight into sessions.</p>
