@@ -19,6 +19,7 @@ from .sessions import Session
 from .sidebar import SessionSidebar
 from .state import AppState
 from .store import SessionStore
+from .switcher import QuickSwitcher
 from .terminal import TerminalTab
 
 _GHOSTTY = shutil.which("ghostty")
@@ -62,6 +63,7 @@ class MainWindow(Adw.ApplicationWindow):
         self._menu_page: Adw.TabPage | None = None
         self._base_titles: dict[Adw.TabPage, str] = {}  # fork/new tab title without emoji
         self._idle_sources: dict[Adw.TabPage, int] = {}  # pending idle-notify timers
+        self._switcher: QuickSwitcher | None = None
 
         self._install_actions()
         self._install_shortcuts()
@@ -150,6 +152,7 @@ class MainWindow(Adw.ApplicationWindow):
             "next-tab": lambda *_: self.tab_view.select_next_page(),
             "prev-tab": lambda *_: self.tab_view.select_previous_page(),
             "about": lambda *_: self._show_about(),
+            "quick-switch": lambda *_: self._quick_switch(),
             "rename-tab": lambda *_: self._rename_tab(),
             "set-tab-emoji": lambda *_: self._set_tab_emoji(),
             "copy-tab-session-id": lambda *_: self._copy_tab_session_id(),
@@ -196,6 +199,7 @@ class MainWindow(Adw.ApplicationWindow):
             ("<Control>Page_Down", "win.next-tab"),
             ("<Control>Page_Up", "win.prev-tab"),
             ("<Control>comma", "win.preferences"),
+            ("<Control><Shift>k", "win.quick-switch"),
             ("F9", "win.toggle-sidebar"),
         ):
             controller.add_shortcut(
@@ -600,6 +604,13 @@ class MainWindow(Adw.ApplicationWindow):
             issue_url="https://github.com/r4nd3l/claude-session-manager/issues",
         )
         about.present(self)
+
+    def _quick_switch(self) -> None:
+        if self._switcher is not None:  # already open — don't stack another
+            return
+        self._switcher = QuickSwitcher(self.store, lambda item: self.open_session(item.session))
+        self._switcher.connect("closed", lambda *_: setattr(self, "_switcher", None))
+        self._switcher.present(self)
 
     def _show_preferences(self) -> None:
         PreferencesDialog(self.state, self._apply_settings_to_tabs).present(self)

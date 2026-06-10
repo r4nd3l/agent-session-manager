@@ -10,6 +10,8 @@
   counts.
 - **Live updates** — sessions appear and reorder as they're created or written
   to, via a filesystem watch.
+- **Quick switcher** (`Ctrl+Shift+K`) — a type-ahead dialog to jump to any
+  session by name, project, preview, or ID.
 - **Status dots**: green = open in a tab, blue = produced output while in the
   background.
 

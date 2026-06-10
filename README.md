@@ -36,6 +36,7 @@ Features:
 | `Ctrl+PgUp` / `Ctrl+PgDn` | Previous / next tab |
 | `Ctrl+Shift+C` / `Ctrl+Shift+V` | Copy / paste in terminal |
 | `Ctrl+Shift+G` | Find in terminal |
+| `Ctrl+Shift+K` | Quick switcher (jump to any session) |
 | `F9` | Toggle sidebar |
 | `Ctrl+,` | Preferences |
 

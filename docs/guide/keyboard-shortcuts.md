@@ -8,6 +8,7 @@
 | `Ctrl+PgUp` / `Ctrl+PgDn` | Previous / next tab |
 | `Ctrl+Shift+C` / `Ctrl+Shift+V` | Copy / paste in the terminal |
 | `Ctrl+Shift+G` | Find in the terminal |
+| `Ctrl+Shift+K` | Quick switcher — jump to any session |
 | `Shift+Enter` | Insert a newline in Claude's prompt |
 | `F9` | Toggle the sidebar |
 | `Ctrl+,` | Preferences |
