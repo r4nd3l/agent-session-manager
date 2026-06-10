@@ -12,7 +12,13 @@ gi.require_version("Adw", "1")
 from gi.repository import Adw, GLib, Gtk  # noqa: E402
 
 from .formatting import format_size, format_timestamp, format_tokens
-from .sessions import Session, SessionDetails, configured_mcp_servers, parse_details
+from .sessions import (
+    Session,
+    SessionDetails,
+    configured_mcp_servers,
+    parse_details,
+    read_mcp_config,
+)
 
 
 def rename_dialog(parent: Gtk.Widget, body: str, current: str, on_save: Callable[[str], None]) -> None:
@@ -74,6 +80,50 @@ def confirm_dialog(
 def error_dialog(parent: Gtk.Widget, heading: str, body: str) -> None:
     dialog = Adw.AlertDialog(heading=heading, body=body)
     dialog.add_response("ok", "OK")
+    dialog.present(parent)
+
+
+# -- MCP servers browser -------------------------------------------------------
+
+
+def mcp_browser_dialog(parent: Gtk.Widget) -> None:
+    config = read_mcp_config()
+    page = Adw.PreferencesPage()
+
+    def server_row(name: str, summary: str) -> Adw.ActionRow:
+        row = Adw.ActionRow(title=name, subtitle=summary or "—")
+        row.set_property("subtitle-lines", 0)
+        row.add_css_class("property")
+        return row
+
+    if config.is_empty:
+        empty = Adw.PreferencesGroup()
+        empty.add(Adw.ActionRow(title="No MCP servers configured"))
+        page.add(empty)
+    else:
+        if config.global_servers:
+            group = Adw.PreferencesGroup(
+                title="Global", description="Available to every project"
+            )
+            for server in config.global_servers:
+                group.add(server_row(server.name, server.summary))
+            page.add(group)
+        for path, servers in config.project_servers:
+            group = Adw.PreferencesGroup(title=GLib.path_get_basename(path), description=path)
+            for server in servers:
+                group.add(server_row(server.name, server.summary))
+            page.add(group)
+
+    header = Adw.HeaderBar()
+    header.set_title_widget(Adw.WindowTitle(title="MCP Servers", subtitle="Read-only"))
+    view = Adw.ToolbarView()
+    view.add_top_bar(header)
+    view.set_content(page)
+
+    dialog = Adw.Dialog(title="MCP Servers")
+    dialog.set_content_width(540)
+    dialog.set_content_height(600)
+    dialog.set_child(view)
     dialog.present(parent)
 
 

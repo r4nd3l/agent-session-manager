@@ -175,6 +175,7 @@ class MainWindow(Adw.ApplicationWindow):
             "new-session": lambda *_: self._new_session(),
             "new-session-choose": lambda *_: self._choose_new_session_folder(),
             "preferences": lambda *_: self._show_preferences(),
+            "mcp-servers": lambda *_: dialogs.mcp_browser_dialog(self),
             "focus-search": lambda *_: self.sidebar.focus_search(),
             "close-tab": lambda *_: self._close_current_tab(),
             "next-tab": lambda *_: self.tab_view.select_next_page(),

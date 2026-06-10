@@ -23,6 +23,8 @@ Features:
 - **Desktop notifications** when a background session goes quiet after producing output — click to jump to that tab (toggle in Preferences).
 - **Select mode** (checkbox button in the sidebar header) for bulk actions: open, star, hide, or trash many sessions at once.
 - **New session** (tab icon in the header) asks for a project folder and starts a fresh `claude` there.
+- **Quick switcher** (`Ctrl+Shift+K`) jumps to any session by type-ahead; the **New Session** button remembers your last folder; the sidebar is **resizable** and its width is remembered.
+- **MCP servers browser** (menu → MCP servers): a read-only view of every MCP server configured in `~/.claude.json`, global and per-project.
 - **Preferences** (menu → Preferences, or `Ctrl+,`): terminal font, scrollback, color scheme.
 - A status footer shows session, project, transcript-size, and open-tab counts.
 

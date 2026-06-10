@@ -224,3 +224,62 @@ def configured_mcp_servers(cwd: str | None) -> list[str]:
         if isinstance(project, dict) and isinstance(project.get("mcpServers"), dict):
             servers.update(project["mcpServers"])
     return sorted(servers)
+
+
+@dataclass
+class McpServer:
+    name: str
+    summary: str  # short description: transport + command/url
+
+
+@dataclass
+class McpConfig:
+    """Read-only snapshot of MCP servers configured in ~/.claude.json."""
+
+    global_servers: list[McpServer] = field(default_factory=list)
+    # (project_path, servers) for projects that define their own servers
+    project_servers: list[tuple[str, list[McpServer]]] = field(default_factory=list)
+
+    @property
+    def is_empty(self) -> bool:
+        return not self.global_servers and not self.project_servers
+
+
+def _summarize_mcp(config: object) -> str:
+    if not isinstance(config, dict):
+        return ""
+    transport = config.get("type")
+    url = config.get("url")
+    if url:
+        return f"{transport or 'http'} · {url}"
+    command = config.get("command")
+    if command:
+        args = config.get("args") or []
+        joined = " ".join(str(a) for a in args) if isinstance(args, list) else ""
+        return f"{transport or 'stdio'} · {command} {joined}".strip()
+    return transport or "—"
+
+
+def _servers_from(mapping: object) -> list[McpServer]:
+    if not isinstance(mapping, dict):
+        return []
+    return [McpServer(name, _summarize_mcp(cfg)) for name, cfg in sorted(mapping.items())]
+
+
+def read_mcp_config() -> McpConfig:
+    """All configured MCP servers — global and per-project. Read-only."""
+    try:
+        data = json.loads(CLAUDE_CONFIG.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return McpConfig()
+    if not isinstance(data, dict):
+        return McpConfig()
+    config = McpConfig(global_servers=_servers_from(data.get("mcpServers")))
+    projects = data.get("projects")
+    if isinstance(projects, dict):
+        for path, project in sorted(projects.items()):
+            if isinstance(project, dict):
+                servers = _servers_from(project.get("mcpServers"))
+                if servers:
+                    config.project_servers.append((path, servers))
+    return config

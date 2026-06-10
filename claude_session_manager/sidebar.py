@@ -206,6 +206,7 @@ class SessionSidebar(Gtk.Box):
 
         menu = Gio.Menu()
         menu.append("Show hidden sessions", "win.show-hidden")
+        menu.append("MCP servers", "win.mcp-servers")
         menu.append("Preferences", "win.preferences")
         menu.append("About Claude Session Manager", "win.about")
         header.pack_end(Gtk.MenuButton(icon_name="open-menu-symbolic", menu_model=menu))

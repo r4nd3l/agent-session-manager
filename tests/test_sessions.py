@@ -4,6 +4,7 @@ from claude_session_manager.sessions import (
     configured_mcp_servers,
     discover_sessions,
     parse_details,
+    read_mcp_config,
 )
 
 
@@ -92,6 +93,42 @@ def test_configured_mcp_servers(monkeypatch, tmp_path):
     assert configured_mcp_servers("/home/u/proj") == ["gitlab", "local-thing", "playwright"]
     assert configured_mcp_servers("/unknown") == ["gitlab", "playwright"]
     assert configured_mcp_servers(None) == ["gitlab", "playwright"]
+
+
+def test_read_mcp_config(monkeypatch, tmp_path):
+    import claude_session_manager.sessions as sessions_mod
+
+    config = tmp_path / "claude.json"
+    config.write_text(
+        json.dumps(
+            {
+                "mcpServers": {
+                    "gitlab": {"type": "stdio", "command": "npx", "args": ["-y", "gitlab-mcp"]},
+                    "linear": {"type": "http", "url": "https://mcp.linear.app/sse"},
+                },
+                "projects": {
+                    "/home/u/proj": {"mcpServers": {"local-thing": {"command": "./serve"}}},
+                    "/home/u/empty": {"mcpServers": {}},
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(sessions_mod, "CLAUDE_CONFIG", config)
+    mcp = read_mcp_config()
+    assert not mcp.is_empty
+    assert [s.name for s in mcp.global_servers] == ["gitlab", "linear"]
+    assert "stdio · npx -y gitlab-mcp" == mcp.global_servers[0].summary
+    assert "http · https://mcp.linear.app/sse" == mcp.global_servers[1].summary
+    # only the project with servers shows up
+    assert [p for p, _ in mcp.project_servers] == ["/home/u/proj"]
+
+
+def test_read_mcp_config_missing_file(monkeypatch, tmp_path):
+    import claude_session_manager.sessions as sessions_mod
+
+    monkeypatch.setattr(sessions_mod, "CLAUDE_CONFIG", tmp_path / "nope.json")
+    assert read_mcp_config().is_empty
 
 
 def test_configured_mcp_servers_missing_file(monkeypatch, tmp_path):

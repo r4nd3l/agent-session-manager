@@ -36,6 +36,9 @@ Code's own session files are never modified.
 - Closing a tab asks Claude to **exit cleanly** (`/exit`) in the background
   first, rather than terminating it.
 - A **close-all-tabs** button appears when more than one tab is open.
+- The **New Session** button starts in the last-used folder; its dropdown picks
+  a different one. The sidebar is **resizable** (drag the divider) and its width
+  is remembered.
 
 ## Knowing what's happening
 
@@ -45,7 +48,10 @@ Code's own session files are never modified.
 - **Session details** (right-click → *Details…*): message and tool-call counts,
   models used, token totals, timestamps, transcript size — plus a **recent
   activity** peek of the last messages, so you can identify a session without
-  resuming it.
+  resuming it. It also lists the **MCP servers** available to the project and
+  which ones the session actually used.
+- **MCP servers browser** (menu → *MCP servers*): a read-only view of every MCP
+  server configured in `~/.claude.json`, global and per-project.
 
 ## Bulk actions & housekeeping
 
