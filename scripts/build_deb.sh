@@ -31,12 +31,15 @@ chmod 755 "$BUILD/usr/bin/$PKG"
 # -- desktop file / icon / metainfo --------------------------------------------
 mkdir -p "$BUILD/usr/share/applications" \
          "$BUILD/usr/share/icons/hicolor/scalable/apps" \
+         "$BUILD/usr/share/icons/hicolor/scalable/actions" \
          "$BUILD/usr/share/metainfo" \
          "$BUILD/usr/share/doc/$PKG"
 # system-wide desktop entry: binary on PATH, no hardcoded working directory
 sed -e "s|^Exec=.*|Exec=$PKG|" -e "/^Path=/d" \
     "$ROOT/data/$APP_ID.desktop" > "$BUILD/usr/share/applications/$APP_ID.desktop"
 cp "$ROOT/data/icons/$APP_ID.svg" "$BUILD/usr/share/icons/hicolor/scalable/apps/"
+cp "$ROOT/data/icons/hicolor/scalable/actions/"*.svg \
+    "$BUILD/usr/share/icons/hicolor/scalable/actions/"
 cp "$ROOT/data/$APP_ID.metainfo.xml" "$BUILD/usr/share/metainfo/"
 cp "$ROOT/LICENSE" "$BUILD/usr/share/doc/$PKG/copyright"
 

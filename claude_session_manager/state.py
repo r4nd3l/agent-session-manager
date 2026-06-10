@@ -26,6 +26,7 @@ DEFAULT_SETTINGS = {
 class AppState:
     def __init__(self) -> None:
         self.names: dict[str, str] = {}
+        self.emojis: dict[str, str] = {}
         self.favorites: set[str] = set()
         self.hidden: set[str] = set()
         self.settings: dict = dict(DEFAULT_SETTINGS)
@@ -44,6 +45,7 @@ class AppState:
             except (OSError, json.JSONDecodeError):
                 data = {}
         self.names = dict(data.get("names") or {})
+        self.emojis = dict(data.get("emojis") or {})
         self.favorites = set(data.get("favorites") or [])
         self.hidden = set(data.get("hidden") or [])
         self.settings = {**DEFAULT_SETTINGS, **(data.get("settings") or {})}
@@ -52,6 +54,7 @@ class AppState:
         _CONFIG_DIR.mkdir(parents=True, exist_ok=True)
         payload = {
             "names": self.names,
+            "emojis": self.emojis,
             "favorites": sorted(self.favorites),
             "hidden": sorted(self.hidden),
             "settings": self.settings,
@@ -71,6 +74,19 @@ class AppState:
             self.names[session_id] = name
         else:
             self.names.pop(session_id, None)
+        self.save()
+
+    # -- emojis ------------------------------------------------------------
+
+    def get_emoji(self, session_id: str) -> str | None:
+        return self.emojis.get(session_id)
+
+    def set_emoji(self, session_id: str, emoji: str) -> None:
+        emoji = emoji.strip()
+        if emoji:
+            self.emojis[session_id] = emoji
+        else:
+            self.emojis.pop(session_id, None)
         self.save()
 
     # -- favorites ---------------------------------------------------------

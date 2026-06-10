@@ -57,6 +57,7 @@ class MainWindow(Adw.ApplicationWindow):
         self._confirmed_closes: set[Adw.TabPage] = set()
         self._closing_pages: dict[Adw.TabPage, int] = {}  # graceful close in progress -> attempts
         self._menu_page: Adw.TabPage | None = None
+        self._base_titles: dict[Adw.TabPage, str] = {}  # fork/new tab title without emoji
 
         self._install_actions()
         self._install_shortcuts()
@@ -69,6 +70,7 @@ class MainWindow(Adw.ApplicationWindow):
 
         tab_menu = Gio.Menu()
         tab_menu.append("Rename…", "win.rename-tab")
+        tab_menu.append("Set emoji…", "win.set-tab-emoji")
         tab_menu.append("Copy session ID", "win.copy-tab-session-id")
         tab_menu.append("Close", "win.close-menu-tab")
         self.tab_view.set_menu_model(tab_menu)
@@ -85,6 +87,15 @@ class MainWindow(Adw.ApplicationWindow):
         new_btn.set_tooltip_text("New Claude session… (Ctrl+Shift+T)")
         new_btn.set_action_name("win.new-session")
         content_header.pack_start(new_btn)
+
+        self.close_all_btn = Gtk.Button(icon_name="tab-close-symbolic", visible=False)
+        self.close_all_btn.set_tooltip_text("Close all tabs")
+        self.close_all_btn.connect("clicked", lambda *_: self._close_all_tabs())
+        content_header.pack_start(self.close_all_btn)
+        self.tab_view.connect(
+            "notify::n-pages",
+            lambda *_: self.close_all_btn.set_visible(self.tab_view.get_n_pages() > 1),
+        )
 
         placeholder = Adw.StatusPage(
             icon_name="utilities-terminal-symbolic",
@@ -136,6 +147,7 @@ class MainWindow(Adw.ApplicationWindow):
             "prev-tab": lambda *_: self.tab_view.select_previous_page(),
             "about": lambda *_: self._show_about(),
             "rename-tab": lambda *_: self._rename_tab(),
+            "set-tab-emoji": lambda *_: self._set_tab_emoji(),
             "copy-tab-session-id": lambda *_: self._copy_tab_session_id(),
             "close-menu-tab": lambda *_: self._close_menu_tab(),
             "toggle-sidebar": lambda *_: self.split.set_show_sidebar(
@@ -235,12 +247,18 @@ class MainWindow(Adw.ApplicationWindow):
             fork=fork,
             settings=self.state.settings,
         )
-        title = self.store.display_name(session)
-        page = self._add_tab(tab, f"{title} (fork)" if fork else title,
+        title = f"{self.store.display_name(session)} (fork)" if fork else self._tab_title(session)
+        page = self._add_tab(tab, title,
                              f"{session.project_name} — {session.session_id}")
         if not fork:
             self._pages[session.session_id] = page
             self._sync_status(session.session_id)
+
+    def _tab_title(self, session: Session) -> str:
+        """Tab title with the session's saved emoji prefix (tabs only)."""
+        name = self.store.display_name(session)
+        emoji = self.state.get_emoji(session.session_id)
+        return f"{emoji} {name}" if emoji else name
 
     def _new_session(self) -> None:
         dialog = Gtk.FileDialog(title="Choose project directory")
@@ -275,6 +293,11 @@ class MainWindow(Adw.ApplicationWindow):
     def _close_current_tab(self) -> None:
         page = self.tab_view.get_selected_page()
         if page is not None:
+            self.tab_view.close_page(page)
+
+    def _close_all_tabs(self) -> None:
+        pages = [self.tab_view.get_nth_page(i) for i in range(self.tab_view.get_n_pages())]
+        for page in pages:
             self.tab_view.close_page(page)
 
     def _close_confirmed(self, page: Adw.TabPage) -> None:
@@ -368,6 +391,31 @@ class MainWindow(Adw.ApplicationWindow):
             lambda name: page.set_title(name.strip() or page.get_title()),
         )
 
+    def _set_tab_emoji(self) -> None:
+        page = self._menu_page or self.tab_view.get_selected_page()
+        if page is None:
+            return
+        session_id = self._session_id_of(page)
+        if session_id:
+            current = self.state.get_emoji(session_id) or ""
+
+            def save(emoji: str) -> None:
+                self.state.set_emoji(session_id, emoji.strip())
+                session = self.store.get_session(session_id)
+                if session is not None:
+                    page.set_title(self._tab_title(session))
+
+            dialogs.emoji_dialog(self, current, save)
+        else:  # fork / new tab: no persisted session, set a local prefix
+            base = self._base_titles.get(page, page.get_title())
+            self._base_titles[page] = base
+
+            def save(emoji: str) -> None:
+                emoji = emoji.strip()
+                page.set_title(f"{emoji} {base}" if emoji else base)
+
+            dialogs.emoji_dialog(self, "", save)
+
     def _copy_tab_session_id(self) -> None:
         page = self._menu_page or self.tab_view.get_selected_page()
         if page is None:
@@ -397,6 +445,7 @@ class MainWindow(Adw.ApplicationWindow):
             return True
         self._confirmed_closes.discard(page)
         self._closing_pages.pop(page, None)
+        self._base_titles.pop(page, None)
         session_id = self._session_id_of(page)
         if session_id:
             self._pages.pop(session_id, None)
@@ -441,7 +490,7 @@ class MainWindow(Adw.ApplicationWindow):
             self.store.rename(session.session_id, name)
             page = self._pages.get(session.session_id)
             if page is not None:
-                page.set_title(self.store.display_name(session))
+                page.set_title(self._tab_title(session))
 
         dialogs.rename_dialog(
             self,

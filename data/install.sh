@@ -6,11 +6,13 @@ DATA_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 APP_ID="eu.zengo.ClaudeSessionManager"
 
 ICON_DIR="$HOME/.local/share/icons/hicolor/scalable/apps"
+ACTION_ICON_DIR="$HOME/.local/share/icons/hicolor/scalable/actions"
 APPS_DIR="$HOME/.local/share/applications"
 METAINFO_DIR="$HOME/.local/share/metainfo"
 
-mkdir -p "$ICON_DIR" "$APPS_DIR" "$METAINFO_DIR"
+mkdir -p "$ICON_DIR" "$ACTION_ICON_DIR" "$APPS_DIR" "$METAINFO_DIR"
 cp "$DATA_DIR/icons/$APP_ID.svg" "$ICON_DIR/"
+cp "$DATA_DIR/icons/hicolor/scalable/actions/"*.svg "$ACTION_ICON_DIR/"
 cp "$DATA_DIR/$APP_ID.metainfo.xml" "$METAINFO_DIR/"
 
 # Point Path= at wherever this checkout lives

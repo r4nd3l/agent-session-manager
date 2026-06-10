@@ -31,6 +31,27 @@ def rename_dialog(parent: Gtk.Widget, body: str, current: str, on_save: Callable
     dialog.present(parent)
 
 
+def emoji_dialog(parent: Gtk.Widget, current: str, on_save: Callable[[str], None]) -> None:
+    dialog = Adw.AlertDialog(
+        heading="Set tab emoji",
+        body="Shown before the tab title. Leave empty to remove.",
+    )
+    entry = Gtk.Entry(text=current, placeholder_text="e.g. 🚀")
+    entry.set_property("show-emoji-icon", True)  # click the 🙂 icon to pick one
+    entry.set_property("enable-emoji-completion", True)
+    entry.set_activates_default(True)
+    dialog.set_extra_child(entry)
+    dialog.add_response("cancel", "Cancel")
+    dialog.add_response("save", "Save")
+    dialog.set_response_appearance("save", Adw.ResponseAppearance.SUGGESTED)
+    dialog.set_default_response("save")
+    dialog.connect(
+        "response",
+        lambda _d, response: on_save(entry.get_text()) if response == "save" else None,
+    )
+    dialog.present(parent)
+
+
 def confirm_dialog(
     parent: Gtk.Widget,
     heading: str,

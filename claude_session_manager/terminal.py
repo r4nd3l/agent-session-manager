@@ -211,8 +211,21 @@ class TerminalTab(Gtk.Box):
         self.terminal.grab_focus()
 
     def _on_key_pressed(self, _ctrl, keyval: int, _keycode: int, state: Gdk.ModifierType) -> bool:
-        mask = Gdk.ModifierType.CONTROL_MASK | Gdk.ModifierType.SHIFT_MASK
-        if (state & mask) == mask:
+        ctrl = bool(state & Gdk.ModifierType.CONTROL_MASK)
+        shift = bool(state & Gdk.ModifierType.SHIFT_MASK)
+
+        # Shift+Enter → newline. Terminals send the same byte for Enter and
+        # Shift+Enter, so we emit Meta+Enter (ESC + CR), which Claude Code
+        # interprets as "insert a line break" rather than "submit".
+        if shift and not ctrl and keyval in (
+            Gdk.KEY_Return,
+            Gdk.KEY_KP_Enter,
+            Gdk.KEY_ISO_Enter,
+        ):
+            self.terminal.feed_child(b"\x1b\r")
+            return True
+
+        if ctrl and shift:
             if keyval == Gdk.KEY_C:
                 self.terminal.copy_clipboard_format(Vte.Format.TEXT)
                 return True
