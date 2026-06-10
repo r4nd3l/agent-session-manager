@@ -89,9 +89,12 @@ class MainWindow(Adw.ApplicationWindow):
         self.sidebar_toggle.set_tooltip_text("Toggle sidebar (F9)")
         content_header.pack_start(self.sidebar_toggle)
 
-        new_btn = Gtk.Button(icon_name="tab-new-symbolic")
-        new_btn.set_tooltip_text("New Claude session… (Ctrl+Shift+T)")
-        new_btn.set_action_name("win.new-session")
+        new_menu = Gio.Menu()
+        new_menu.append("New session in folder…", "win.new-session-choose")
+        new_btn = Adw.SplitButton(icon_name="tab-new-symbolic")
+        new_btn.set_tooltip_text("New Claude session (Ctrl+Shift+T)")
+        new_btn.set_menu_model(new_menu)
+        new_btn.connect("clicked", lambda *_: self._new_session())
         content_header.pack_start(new_btn)
 
         self.close_all_btn = Gtk.Button(icon_name="tab-close-symbolic", visible=False)
@@ -124,21 +127,45 @@ class MainWindow(Adw.ApplicationWindow):
         self.sidebar.connect("open-many", self._on_sidebar_open_many)
         self.sidebar.connect("trash-many", self._on_sidebar_trash_many)
 
-        self.split = Adw.OverlaySplitView()
-        self.split.set_sidebar(self.sidebar)
-        self.split.set_content(content_view)
-        self.split.set_min_sidebar_width(280)
-        self.split.set_max_sidebar_width(400)
+        self.sidebar.set_size_request(220, -1)  # minimum drag width
+        self.split = Gtk.Paned(orientation=Gtk.Orientation.HORIZONTAL)
+        self.split.set_start_child(self.sidebar)
+        self.split.set_end_child(content_view)
+        self.split.set_resize_start_child(False)  # window resize grows the content, not the sidebar
+        self.split.set_shrink_start_child(False)
+        self.split.set_position(int(self.state.get_setting("sidebar_width")))
+        self.split.connect("notify::position", self._schedule_save_sidebar_width)
         self.set_content(self.split)
 
-        self.split.bind_property(
-            "show-sidebar",
+        # Toggle button reflects (and controls) sidebar visibility.
+        self._sidebar_width_save_source: int | None = None
+        self.sidebar.bind_property(
+            "visible",
             self.sidebar_toggle,
             "active",
             GObject.BindingFlags.BIDIRECTIONAL | GObject.BindingFlags.SYNC_CREATE,
         )
+        self.sidebar_toggle.connect(
+            "toggled", lambda b: self.sidebar.set_visible(b.get_active())
+        )
 
         self.store.start()
+
+    # -- sidebar width persistence -------------------------------------------
+
+    def _schedule_save_sidebar_width(self, *_args) -> None:
+        if not self.sidebar.get_visible():
+            return  # don't persist the collapsed position
+        if self._sidebar_width_save_source is not None:
+            GLib.source_remove(self._sidebar_width_save_source)
+        self._sidebar_width_save_source = GLib.timeout_add(600, self._save_sidebar_width)
+
+    def _save_sidebar_width(self) -> bool:
+        self._sidebar_width_save_source = None
+        position = self.split.get_position()
+        if position >= 150:
+            self.state.set_setting("sidebar_width", position)
+        return GLib.SOURCE_REMOVE
 
     # -- actions / shortcuts -------------------------------------------------
 
@@ -146,6 +173,7 @@ class MainWindow(Adw.ApplicationWindow):
         plain = {
             "refresh": lambda *_: self.store.refresh(),
             "new-session": lambda *_: self._new_session(),
+            "new-session-choose": lambda *_: self._choose_new_session_folder(),
             "preferences": lambda *_: self._show_preferences(),
             "focus-search": lambda *_: self.sidebar.focus_search(),
             "close-tab": lambda *_: self._close_current_tab(),
@@ -157,8 +185,8 @@ class MainWindow(Adw.ApplicationWindow):
             "set-tab-emoji": lambda *_: self._set_tab_emoji(),
             "copy-tab-session-id": lambda *_: self._copy_tab_session_id(),
             "close-menu-tab": lambda *_: self._close_menu_tab(),
-            "toggle-sidebar": lambda *_: self.split.set_show_sidebar(
-                not self.split.get_show_sidebar()
+            "toggle-sidebar": lambda *_: self.sidebar.set_visible(
+                not self.sidebar.get_visible()
             ),
         }
         for name, callback in plain.items():
@@ -269,7 +297,18 @@ class MainWindow(Adw.ApplicationWindow):
         return f"{emoji} {name}" if emoji else name
 
     def _new_session(self) -> None:
+        """Start in the remembered folder if it still exists, else ask."""
+        default = self.state.get_setting("new_session_dir")
+        if default and Path(default).is_dir():
+            self._start_new_session(default)
+        else:
+            self._choose_new_session_folder()
+
+    def _choose_new_session_folder(self) -> None:
         dialog = Gtk.FileDialog(title="Choose project directory")
+        default = self.state.get_setting("new_session_dir")
+        if default and Path(default).is_dir():
+            dialog.set_initial_folder(Gio.File.new_for_path(default))
         dialog.select_folder(self, None, self._on_new_session_folder)
 
     def _on_new_session_folder(self, dialog: Gtk.FileDialog, result) -> None:
@@ -278,6 +317,10 @@ class MainWindow(Adw.ApplicationWindow):
         except GLib.Error:
             return  # cancelled
         cwd = folder.get_path()
+        self.state.set_setting("new_session_dir", cwd)  # remember for next time
+        self._start_new_session(cwd)
+
+    def _start_new_session(self, cwd: str) -> None:
         tab = TerminalTab(cwd=cwd, session_id=None, settings=self.state.settings)
         self._add_tab(tab, GLib.path_get_basename(cwd), f"new session — {cwd}")
 

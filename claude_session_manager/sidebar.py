@@ -193,6 +193,10 @@ class SessionSidebar(Gtk.Box):
 
         # -- header ---------------------------------------------------------
         header = Adw.HeaderBar()
+        # The content header (right pane) carries the window controls; without
+        # AdwOverlaySplitView coordinating the two bars, hide them here so they
+        # aren't duplicated at the pane boundary.
+        header.set_show_end_title_buttons(False)
         header.set_title_widget(Adw.WindowTitle(title="Sessions"))
 
         self.select_btn = Gtk.ToggleButton(icon_name="object-select-symbolic")

@@ -21,6 +21,8 @@ DEFAULT_SETTINGS = {
     "scrollback": 10_000,
     "color_scheme": "system",  # system | light | dark
     "notify_idle": True,  # notify when a background session goes quiet
+    "new_session_dir": "",  # remembered folder for new sessions (empty = ask)
+    "sidebar_width": 300,  # persisted sidebar pane width in px
 }
 
 
