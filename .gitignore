@@ -19,4 +19,5 @@ debian/claude-session-manager/
 debian/files
 debian/debhelper-build-stamp
 debian/*.substvars
+debian/*.debhelper
 debian/*.log
