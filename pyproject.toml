@@ -1,9 +1,10 @@
 [project]
 # PyPI distribution name ("agent-session-manager" is taken by an unrelated CLI
-# tool). The import package and the installed command stay agent-session-manager.
+# tool). The installed command is "agent-session-manager"; the import package
+# stays "claude_session_manager".
 name = "agent-session-manager-gtk"
-version = "0.8.0"
-description = "Native GTK4 GUI to manage and resume Claude Code sessions"
+version = "0.9.0"
+description = "Native GTK4 GUI to manage and resume AI coding agent sessions (Claude Code, Cursor)"
 readme = "README.md"
 license = { text = "GPL-3.0-or-later" }
 authors = [{ name = "Máté Molnár", email = "molnar.mate@zengo.eu" }]

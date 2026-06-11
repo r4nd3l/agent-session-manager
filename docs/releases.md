@@ -26,6 +26,16 @@ downloads of each version, see the
 
 ## Changelog
 
+### v0.9.0 — Rebrand to Agent Session Manager
+
+- Renamed from **Claude Session Manager** to **Agent Session Manager** — the
+  project, repository, app icon, and docs — to reflect upcoming support for
+  more AI coding agents beyond Claude Code.
+- Existing settings, names, and favorites migrate automatically from the old
+  `~/.config/claude-session-manager/` location on first run.
+- Installed command is now `agent-session-manager`; PyPI package
+  `agent-session-manager-gtk`; AUR/PPA package `agent-session-manager`.
+
 ### v0.8.0 — Distribution & localization
 
 - **Localization**: full UI translations for Hungarian, German, Spanish, and French, with a language picker
