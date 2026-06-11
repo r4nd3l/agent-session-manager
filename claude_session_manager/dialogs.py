@@ -13,11 +13,11 @@ from gi.repository import Adw, GLib, Gtk  # noqa: E402
 
 from .formatting import format_size, format_timestamp, format_tokens
 from .i18n import _
+from .providers import get_provider
 from .sessions import (
     Session,
     SessionDetails,
     configured_mcp_servers,
-    parse_details,
     read_mcp_config,
 )
 
@@ -132,6 +132,7 @@ def mcp_browser_dialog(parent: Gtk.Widget) -> None:
 
 
 def details_dialog(parent: Gtk.Widget, session: Session, title: str) -> None:
+    provider = get_provider(session.provider)
     group = Adw.PreferencesGroup()
     spinner_row = Adw.ActionRow(title=_("Reading transcript…"))
     spinner = Gtk.Spinner(spinning=True, valign=Gtk.Align.CENTER)
@@ -162,19 +163,26 @@ def details_dialog(parent: Gtk.Widget, session: Session, title: str) -> None:
             row.add_css_class("property")
             info.add(row)
 
+        add(_("Agent"), provider.name)
         add(_("Session ID"), session.session_id)
         add(_("Directory"), session.cwd or _("unknown"))
-        add(_("Created"), format_timestamp(details.first_timestamp))
-        add(_("Last activity"), format_timestamp(details.last_timestamp))
+        # Rows that some agents don't record (e.g. Cursor) are hidden when empty.
+        if details.first_timestamp:
+            add(_("Created"), format_timestamp(details.first_timestamp))
+        if details.last_timestamp:
+            add(_("Last activity"), format_timestamp(details.last_timestamp))
         add(_("Messages"), f"{details.user_messages} user · {details.assistant_messages} assistant")
-        add(_("Tool calls"), str(details.tool_calls))
-        add(_("Models"), ", ".join(details.models) or "—")
-        add(
-            _("Tokens"),
-            f"{format_tokens(details.input_tokens)} in · "
-            f"{format_tokens(details.output_tokens)} out · "
-            f"{format_tokens(details.cache_read_tokens)} cache-read",
-        )
+        if details.tool_calls:
+            add(_("Tool calls"), str(details.tool_calls))
+        if details.models:
+            add(_("Models"), ", ".join(details.models))
+        if details.input_tokens or details.output_tokens or details.cache_read_tokens:
+            add(
+                _("Tokens"),
+                f"{format_tokens(details.input_tokens)} in · "
+                f"{format_tokens(details.output_tokens)} out · "
+                f"{format_tokens(details.cache_read_tokens)} cache-read",
+            )
         add(_("Transcript size"), format_size(details.file_size))
         page.add(info)
 
@@ -199,7 +207,7 @@ def details_dialog(parent: Gtk.Widget, session: Session, title: str) -> None:
             recent = Adw.PreferencesGroup(title=_("Recent activity"))
             for role, text in details.messages:
                 row = Adw.ActionRow(
-                    title=_("You") if role == "user" else _("Claude"),
+                    title=_("You") if role == "user" else provider.name,
                     subtitle=text,
                 )
                 row.set_property("subtitle-lines", 0)  # wrap, no truncation
@@ -209,8 +217,9 @@ def details_dialog(parent: Gtk.Widget, session: Session, title: str) -> None:
         return GLib.SOURCE_REMOVE
 
     def work() -> None:
-        details = parse_details(session.jsonl_path)
-        mcp_servers = configured_mcp_servers(session.cwd)
+        details = provider.parse_details(session.jsonl_path)
+        # MCP config lives in ~/.claude.json — only meaningful for Claude.
+        mcp_servers = configured_mcp_servers(session.cwd) if session.provider == "claude" else []
         GLib.idle_add(populate, details, mcp_servers)
 
     threading.Thread(target=work, daemon=True).start()

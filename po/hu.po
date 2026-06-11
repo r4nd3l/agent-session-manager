@@ -268,8 +268,8 @@ msgstr "Kijelöltek megnyitása lapokon"
 msgid "warning: project dir {cwd} no longer exists, starting in HOME"
 msgstr "figyelmeztetés: a(z) {cwd} projektkönyvtár már nem létezik, indítás a HOME-ban"
 
-msgid "warning: `claude` not found in PATH — starting a plain shell"
-msgstr "figyelmeztetés: a `claude` nem található a PATH-ban — egyszerű parancsértelmező indítása"
+msgid "warning: `{cli}` not found in PATH — starting a plain shell"
+msgstr "figyelmeztetés: a `{cli}` nem található a PATH-ban — egyszerű parancsértelmező indítása"
 
 msgid "failed to start shell: {msg}"
 msgstr "nem sikerült elindítani a parancsértelmezőt: {msg}"
@@ -292,11 +292,14 @@ msgstr "Bezárás"
 msgid "Toggle sidebar (F9)"
 msgstr "Oldalsáv ki/be (F9)"
 
-msgid "New session in folder…"
-msgstr "Új munkamenet mappában…"
+msgid "New {name} session…"
+msgstr "Új {name} munkamenet…"
 
-msgid "New Claude session (Ctrl+Shift+T)"
-msgstr "Új Claude-munkamenet (Ctrl+Shift+T)"
+msgid "New session (Ctrl+Shift+T)"
+msgstr "Új munkamenet (Ctrl+Shift+T)"
+
+msgid "Agent"
+msgstr "Ügynök"
 
 msgid "Close all tabs"
 msgstr "Összes lap bezárása"

@@ -5,6 +5,7 @@ from __future__ import annotations
 
 from gi.repository import GObject
 
+from .providers import get_provider
 from .sessions import Session
 
 FAV_GROUP = ("fav", "")
@@ -31,6 +32,14 @@ class SessionItem(GObject.Object):
     @property
     def session_id(self) -> str:
         return self.session.session_id
+
+    @property
+    def provider_icon(self) -> str:
+        return get_provider(self.session.provider).icon_name
+
+    @property
+    def provider_label(self) -> str:
+        return get_provider(self.session.provider).name
 
     @property
     def search_text(self) -> str:

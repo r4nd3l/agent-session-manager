@@ -17,6 +17,7 @@ from . import __version__, dialogs
 from .i18n import _
 from .models import SessionItem
 from .prefs import PreferencesDialog
+from .providers import available_providers, get_provider
 from .sessions import Session, export_markdown
 from .sidebar import SessionSidebar
 from .state import AppState
@@ -90,10 +91,14 @@ class MainWindow(Adw.ApplicationWindow):
         content_header.pack_start(self.sidebar_toggle)
 
         new_menu = Gio.Menu()
-        new_menu.append(_("New session in folder…"), "win.new-session-choose")
+        for provider in available_providers():
+            new_menu.append(
+                _("New {name} session…").format(name=provider.name),
+                f"win.new-session-provider::{provider.id}",
+            )
         new_menu.append(_("New window"), "app.new-window")
         new_btn = Adw.SplitButton(icon_name="tab-new-symbolic")
-        new_btn.set_tooltip_text(_("New Claude session (Ctrl+Shift+T)"))
+        new_btn.set_tooltip_text(_("New session (Ctrl+Shift+T)"))
         new_btn.set_menu_model(new_menu)
         new_btn.connect("clicked", lambda *_: self._new_session())
         content_header.pack_start(new_btn)
@@ -172,7 +177,6 @@ class MainWindow(Adw.ApplicationWindow):
         plain = {
             "refresh": lambda *_: self.store.refresh(),
             "new-session": lambda *_: self._new_session(),
-            "new-session-choose": lambda *_: self._choose_new_session_folder(),
             "preferences": lambda *_: self._show_preferences(),
             "mcp-servers": lambda *_: dialogs.mcp_browser_dialog(self),
             "focus-search": lambda *_: self.sidebar.focus_search(),
@@ -195,6 +199,9 @@ class MainWindow(Adw.ApplicationWindow):
             self.add_action(action)
 
         per_session = {
+            "new-session-provider": lambda _a, p: self._choose_new_session_folder(
+                get_provider(p.get_string())
+            ),
             "open-session": self._on_open_action,
             "fork-session": self._on_fork_action,
             "open-ghostty": self._on_open_ghostty,
@@ -272,6 +279,8 @@ class MainWindow(Adw.ApplicationWindow):
     # -- tabs --------------------------------------------------------------
 
     def open_session(self, session: Session, fork: bool = False) -> None:
+        provider = get_provider(session.provider)
+        fork = fork and provider.supports_fork
         if not fork:
             page = self._pages.get(session.session_id)
             if page is not None:
@@ -283,6 +292,7 @@ class MainWindow(Adw.ApplicationWindow):
             session_id=session.session_id,
             fork=fork,
             settings=self.state.settings,
+            provider=provider,
         )
         title = f"{self.store.display_name(session)} (fork)" if fork else self._tab_title(session)
         page = self._add_tab(tab, title,
@@ -297,15 +307,22 @@ class MainWindow(Adw.ApplicationWindow):
         emoji = self.state.get_emoji(session.session_id)
         return f"{emoji} {name}" if emoji else name
 
-    def _new_session(self) -> None:
+    def _default_provider(self):
+        """First installed agent (Claude when present), used by the quick button."""
+        providers = available_providers()
+        return providers[0] if providers else get_provider("claude")
+
+    def _new_session(self, provider=None) -> None:
         """Start in the remembered folder if it still exists, else ask."""
+        provider = provider or self._default_provider()
         default = self.state.get_setting("new_session_dir")
         if default and Path(default).is_dir():
-            self._start_new_session(default)
+            self._start_new_session(default, provider)
         else:
-            self._choose_new_session_folder()
+            self._choose_new_session_folder(provider)
 
-    def _choose_new_session_folder(self) -> None:
+    def _choose_new_session_folder(self, provider=None) -> None:
+        self._new_session_provider = provider or self._default_provider()
         dialog = Gtk.FileDialog(title=_("Choose project directory"))
         default = self.state.get_setting("new_session_dir")
         if default and Path(default).is_dir():
@@ -319,11 +336,18 @@ class MainWindow(Adw.ApplicationWindow):
             return  # cancelled
         cwd = folder.get_path()
         self.state.set_setting("new_session_dir", cwd)  # remember for next time
-        self._start_new_session(cwd)
+        self._start_new_session(cwd, getattr(self, "_new_session_provider", None))
 
-    def _start_new_session(self, cwd: str) -> None:
-        tab = TerminalTab(cwd=cwd, session_id=None, settings=self.state.settings)
-        self._add_tab(tab, GLib.path_get_basename(cwd), f"new session — {cwd}")
+    def _start_new_session(self, cwd: str, provider=None) -> None:
+        provider = provider or self._default_provider()
+        tab = TerminalTab(
+            cwd=cwd, session_id=None, settings=self.state.settings, provider=provider
+        )
+        self._add_tab(
+            tab,
+            GLib.path_get_basename(cwd),
+            f"new {provider.name} session — {cwd}",
+        )
 
     def _add_tab(self, tab: TerminalTab, title: str, tooltip: str) -> Adw.TabPage:
         page = self.tab_view.append(tab)
@@ -358,15 +382,20 @@ class MainWindow(Adw.ApplicationWindow):
         self.tab_view.close_page(page)
 
     def _graceful_close(self, page: Adw.TabPage) -> None:
-        """Ask Claude to exit cleanly (/exit), then close once the shell
-        returns. Falls back to a force-close after a timeout."""
+        """Ask the agent to exit cleanly (e.g. Claude's /exit), then close once the
+        shell returns. Falls back to a force-close after a timeout. Agents with no
+        clean-exit command (e.g. Cursor) are force-closed directly."""
         tab = page.get_child()
         if not isinstance(tab, TerminalTab):
             self._close_confirmed(page)
             return
+        exit_text = tab.provider.graceful_exit()
+        if not exit_text:
+            self._close_confirmed(page)
+            return
         self._closing_pages[page] = 0
-        # Enter in a raw-mode TUI (claude) is carriage return, not newline.
-        tab.feed_child_text("/exit\r")
+        # Enter in a raw-mode TUI is carriage return, not newline.
+        tab.feed_child_text(exit_text)
         GLib.timeout_add(300, self._poll_graceful, page, tab)
 
     def _poll_graceful(self, page: Adw.TabPage, tab: TerminalTab) -> bool:
@@ -563,9 +592,13 @@ class MainWindow(Adw.ApplicationWindow):
         session = self._session_for(param)
         if session is None or _GHOSTTY is None:
             return
+        provider = get_provider(session.provider)
+        if shutil.which(provider.cli) is None:
+            return
         cwd = session.cwd if session.cwd and Path(session.cwd).is_dir() else str(Path.home())
         subprocess.Popen(
-            [_GHOSTTY, f"--working-directory={cwd}", "-e", "claude", "--resume", session.session_id],
+            [_GHOSTTY, f"--working-directory={cwd}", "-e",
+             provider.cli, "--resume", session.session_id],
             start_new_session=True,
         )
 

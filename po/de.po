@@ -268,8 +268,8 @@ msgstr "Ausgewählte in Tabs öffnen"
 msgid "warning: project dir {cwd} no longer exists, starting in HOME"
 msgstr "Warnung: Projektverzeichnis {cwd} existiert nicht mehr, starte im HOME"
 
-msgid "warning: `claude` not found in PATH — starting a plain shell"
-msgstr "Warnung: `claude` nicht im PATH gefunden — starte eine einfache Shell"
+msgid "warning: `{cli}` not found in PATH — starting a plain shell"
+msgstr "Warnung: `{cli}` nicht im PATH gefunden — starte eine einfache Shell"
 
 msgid "failed to start shell: {msg}"
 msgstr "Shell konnte nicht gestartet werden: {msg}"
@@ -292,11 +292,14 @@ msgstr "Schließen"
 msgid "Toggle sidebar (F9)"
 msgstr "Seitenleiste umschalten (F9)"
 
-msgid "New session in folder…"
-msgstr "Neue Sitzung im Ordner…"
+msgid "New {name} session…"
+msgstr "Neue {name}-Sitzung…"
 
-msgid "New Claude session (Ctrl+Shift+T)"
-msgstr "Neue Claude-Sitzung (Strg+Umschalt+T)"
+msgid "New session (Ctrl+Shift+T)"
+msgstr "Neue Sitzung (Strg+Umschalt+T)"
+
+msgid "Agent"
+msgstr "Agent"
 
 msgid "Close all tabs"
 msgstr "Alle Tabs schließen"

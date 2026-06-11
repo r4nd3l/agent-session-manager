@@ -1,4 +1,8 @@
-"""Discover Claude Code sessions from ~/.claude/projects/*/<session-id>.jsonl."""
+"""Session model + Claude Code transcript parsing.
+
+Discovery is delegated to per-agent providers (see providers.py);
+discover_sessions() aggregates every installed agent's sessions.
+"""
 
 from __future__ import annotations
 
@@ -37,7 +41,8 @@ class Session:
     preview: str  # first user message, truncated
     mtime: float  # last activity (file mtime)
     size: int = 0  # transcript size in bytes
-    state: str = ""  # "" or "waiting" (Claude's last message was a question)
+    state: str = ""  # "" or "waiting" (the agent's last message was a question)
+    provider: str = "claude"  # provider id (see providers.py)
 
     @property
     def project_name(self) -> str:
@@ -139,34 +144,14 @@ def _tail_state(path: Path) -> str:
 
 
 def discover_sessions() -> list[Session]:
-    """All sessions under ~/.claude/projects, newest activity first."""
+    """All sessions from every installed agent, newest activity first."""
+    # Local import breaks the sessions<->providers cycle (providers imports the
+    # parsing helpers above at module load; this runs only at call time).
+    from .providers import available_providers
+
     sessions: list[Session] = []
-    if not CLAUDE_PROJECTS_DIR.is_dir():
-        return sessions
-    for project_dir in CLAUDE_PROJECTS_DIR.iterdir():
-        if not project_dir.is_dir():
-            continue
-        for jsonl in project_dir.glob("*.jsonl"):
-            if not _UUID_RE.match(jsonl.stem):
-                continue
-            try:
-                stat = jsonl.stat()
-            except OSError:
-                continue
-            if stat.st_size == 0:
-                continue
-            cwd, preview = _scan_transcript(jsonl)
-            sessions.append(
-                Session(
-                    session_id=jsonl.stem,
-                    jsonl_path=jsonl,
-                    cwd=cwd,
-                    preview=preview,
-                    mtime=stat.st_mtime,
-                    size=stat.st_size,
-                    state=_tail_state(jsonl),
-                )
-            )
+    for provider in available_providers():
+        sessions.extend(provider.discover())
     sessions.sort(key=lambda s: s.mtime, reverse=True)
     return sessions
 

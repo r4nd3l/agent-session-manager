@@ -1,10 +1,8 @@
-"""A tab hosting a VTE terminal running the user's shell with `claude` inside."""
+"""A tab hosting a VTE terminal running the user's shell with an agent CLI inside."""
 
 from __future__ import annotations
 
 import os
-import shlex
-import shutil
 from pathlib import Path
 
 import gi
@@ -15,6 +13,7 @@ from gi.repository import Gdk, GLib, GObject, Gtk, Pango, Vte  # noqa: E402
 
 from . import themes  # noqa: E402
 from .i18n import _  # noqa: E402
+from .providers import Provider, get_provider  # noqa: E402
 
 # PCRE2 flags for the find bar: multiline, case-insensitive.
 _PCRE2_CASELESS = 0x00000008
@@ -23,10 +22,10 @@ _SEARCH_FLAGS = _PCRE2_CASELESS | _PCRE2_MULTILINE
 
 
 class TerminalTab(Gtk.Box):
-    """Embeds Vte.Terminal (with a find bar) and spawns the claude CLI into it."""
+    """Embeds Vte.Terminal (with a find bar) and spawns an agent CLI into it."""
 
     __gsignals__ = {
-        # Emitted when the claude process exits (int = exit status).
+        # Emitted when the agent process exits (int = exit status).
         "process-exited": (GObject.SignalFlags.RUN_FIRST, None, (int,)),
     }
 
@@ -36,10 +35,12 @@ class TerminalTab(Gtk.Box):
         session_id: str | None = None,
         fork: bool = False,
         settings: dict | None = None,
+        provider: Provider | None = None,
     ) -> None:
         super().__init__(orientation=Gtk.Orientation.VERTICAL)
         self.session_id = session_id
         self.fork = fork
+        self.provider = provider or get_provider("claude")
         self._child_pid: int | None = None
 
         self.terminal = Vte.Terminal()
@@ -75,19 +76,21 @@ class TerminalTab(Gtk.Box):
                 )
             cwd = str(Path.home())
 
-        # Run the user's interactive shell and type the claude command into it,
-        # so aliases/env apply and the tab drops to a prompt when claude exits.
+        # Run the user's interactive shell and type the agent command into it,
+        # so aliases/env apply and the tab drops to a prompt when the agent exits.
         # The tab closes when the *shell* exits.
         self._initial_command: str | None = None
-        claude = shutil.which("claude")
-        if claude is None:
-            self.feed_message(_("warning: `claude` not found in PATH — starting a plain shell"))
+        if session_id is not None:
+            command = self.provider.resume_command(session_id, fork=self.fork)
         else:
-            command = shlex.quote(claude)
-            if session_id is not None:
-                command += f" --resume {shlex.quote(session_id)}"
-                if self.fork:
-                    command += " --fork-session"
+            command = self.provider.new_command()
+        if command is None:
+            self.feed_message(
+                _("warning: `{cli}` not found in PATH — starting a plain shell").format(
+                    cli=self.provider.cli
+                )
+            )
+        else:
             self._initial_command = command
 
         shell = os.environ.get("SHELL") or "/bin/bash"

@@ -22,6 +22,7 @@ from gi.repository import Adw, Gdk, Gio, GLib, GObject, Gtk  # noqa: E402
 from .formatting import format_size
 from .i18n import _
 from .models import FAV_GROUP, SessionItem
+from .providers import get_provider
 from .store import SessionStore
 
 _GHOSTTY = shutil.which("ghostty")
@@ -90,6 +91,12 @@ class SessionRow(Gtk.ListBoxRow):
         self.dot = Gtk.Box(valign=Gtk.Align.CENTER)
         self.dot.add_css_class("status-dot")
         top.append(self.dot)
+
+        agent_icon = Gtk.Image.new_from_icon_name(item.provider_icon)
+        agent_icon.set_valign(Gtk.Align.CENTER)
+        agent_icon.add_css_class("dim-label")
+        agent_icon.set_tooltip_text(item.provider_label)
+        top.append(agent_icon)
 
         name_label = Gtk.Label(xalign=0.0, hexpand=True)
         name_label.set_ellipsize(_ELLIPSIZE_END)
@@ -438,7 +445,8 @@ class SessionSidebar(Gtk.Box):
         open_section.append_item(item(_("Open"), "open-session"))
         if _GHOSTTY:
             open_section.append_item(item(_("Open in Ghostty"), "open-ghostty"))
-        open_section.append_item(item(_("Fork session"), "fork-session"))
+        if get_provider(row.item.session.provider).supports_fork:
+            open_section.append_item(item(_("Fork session"), "fork-session"))
 
         edit_section = Gio.Menu()
         edit_section.append_item(item(_("Rename…"), "rename-session"))

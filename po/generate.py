@@ -107,8 +107,8 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "Open selected in tabs": "Kijelöltek megnyitása lapokon",
         "warning: project dir {cwd} no longer exists, starting in HOME":
             "figyelmeztetés: a(z) {cwd} projektkönyvtár már nem létezik, indítás a HOME-ban",
-        "warning: `claude` not found in PATH — starting a plain shell":
-            "figyelmeztetés: a `claude` nem található a PATH-ban — egyszerű parancsértelmező indítása",
+        "warning: `{cli}` not found in PATH — starting a plain shell":
+            "figyelmeztetés: a `{cli}` nem található a PATH-ban — egyszerű parancsértelmező indítása",
         "failed to start shell: {msg}": "nem sikerült elindítani a parancsértelmezőt: {msg}",
         "Find in terminal…": "Keresés a terminálban…",
         "Previous match": "Előző találat",
@@ -116,8 +116,9 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "Set emoji…": "Emodzsi beállítása…",
         "Close": "Bezárás",
         "Toggle sidebar (F9)": "Oldalsáv ki/be (F9)",
-        "New session in folder…": "Új munkamenet mappában…",
-        "New Claude session (Ctrl+Shift+T)": "Új Claude-munkamenet (Ctrl+Shift+T)",
+        "New {name} session…": "Új {name} munkamenet…",
+        "New session (Ctrl+Shift+T)": "Új munkamenet (Ctrl+Shift+T)",
+        "Agent": "Ügynök",
         "Close all tabs": "Összes lap bezárása",
         "No session open": "Nincs megnyitott munkamenet",
         "Pick a session from the sidebar, or start a new one.":
@@ -233,8 +234,8 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "Open selected in tabs": "Ausgewählte in Tabs öffnen",
         "warning: project dir {cwd} no longer exists, starting in HOME":
             "Warnung: Projektverzeichnis {cwd} existiert nicht mehr, starte im HOME",
-        "warning: `claude` not found in PATH — starting a plain shell":
-            "Warnung: `claude` nicht im PATH gefunden — starte eine einfache Shell",
+        "warning: `{cli}` not found in PATH — starting a plain shell":
+            "Warnung: `{cli}` nicht im PATH gefunden — starte eine einfache Shell",
         "failed to start shell: {msg}": "Shell konnte nicht gestartet werden: {msg}",
         "Find in terminal…": "Im Terminal suchen…",
         "Previous match": "Vorheriger Treffer",
@@ -242,8 +243,9 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "Set emoji…": "Emoji festlegen…",
         "Close": "Schließen",
         "Toggle sidebar (F9)": "Seitenleiste umschalten (F9)",
-        "New session in folder…": "Neue Sitzung im Ordner…",
-        "New Claude session (Ctrl+Shift+T)": "Neue Claude-Sitzung (Strg+Umschalt+T)",
+        "New {name} session…": "Neue {name}-Sitzung…",
+        "New session (Ctrl+Shift+T)": "Neue Sitzung (Strg+Umschalt+T)",
+        "Agent": "Agent",
         "Close all tabs": "Alle Tabs schließen",
         "No session open": "Keine Sitzung geöffnet",
         "Pick a session from the sidebar, or start a new one.":
@@ -361,8 +363,8 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "Open selected in tabs": "Abrir seleccionadas en pestañas",
         "warning: project dir {cwd} no longer exists, starting in HOME":
             "advertencia: el directorio del proyecto {cwd} ya no existe, iniciando en HOME",
-        "warning: `claude` not found in PATH — starting a plain shell":
-            "advertencia: no se encontró `claude` en PATH — iniciando una shell simple",
+        "warning: `{cli}` not found in PATH — starting a plain shell":
+            "advertencia: no se encontró `{cli}` en PATH — iniciando una shell simple",
         "failed to start shell: {msg}": "no se pudo iniciar la shell: {msg}",
         "Find in terminal…": "Buscar en la terminal…",
         "Previous match": "Coincidencia anterior",
@@ -370,8 +372,9 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "Set emoji…": "Establecer emoji…",
         "Close": "Cerrar",
         "Toggle sidebar (F9)": "Mostrar u ocultar la barra lateral (F9)",
-        "New session in folder…": "Nueva sesión en carpeta…",
-        "New Claude session (Ctrl+Shift+T)": "Nueva sesión de Claude (Ctrl+Mayús+T)",
+        "New {name} session…": "Nueva sesión de {name}…",
+        "New session (Ctrl+Shift+T)": "Nueva sesión (Ctrl+Mayús+T)",
+        "Agent": "Agente",
         "Close all tabs": "Cerrar todas las pestañas",
         "No session open": "Ninguna sesión abierta",
         "Pick a session from the sidebar, or start a new one.":
@@ -488,8 +491,8 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "Open selected in tabs": "Ouvrir la sélection dans des onglets",
         "warning: project dir {cwd} no longer exists, starting in HOME":
             "avertissement : le répertoire de projet {cwd} n’existe plus, démarrage dans HOME",
-        "warning: `claude` not found in PATH — starting a plain shell":
-            "avertissement : `claude` introuvable dans le PATH — démarrage d’un shell simple",
+        "warning: `{cli}` not found in PATH — starting a plain shell":
+            "avertissement : `{cli}` introuvable dans le PATH — démarrage d’un shell simple",
         "failed to start shell: {msg}": "échec du démarrage du shell : {msg}",
         "Find in terminal…": "Rechercher dans le terminal…",
         "Previous match": "Correspondance précédente",
@@ -497,8 +500,9 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "Set emoji…": "Définir un emoji…",
         "Close": "Fermer",
         "Toggle sidebar (F9)": "Afficher/masquer la barre latérale (F9)",
-        "New session in folder…": "Nouvelle session dans le dossier…",
-        "New Claude session (Ctrl+Shift+T)": "Nouvelle session Claude (Ctrl+Maj+T)",
+        "New {name} session…": "Nouvelle session {name}…",
+        "New session (Ctrl+Shift+T)": "Nouvelle session (Ctrl+Maj+T)",
+        "Agent": "Agent",
         "Close all tabs": "Fermer tous les onglets",
         "No session open": "Aucune session ouverte",
         "Pick a session from the sidebar, or start a new one.":

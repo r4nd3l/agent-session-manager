@@ -18,7 +18,8 @@ gi.require_version("Gtk", "4.0")
 from gi.repository import Gio, GLib, GObject  # noqa: E402
 
 from .models import FAV_GROUP, SessionItem
-from .sessions import CLAUDE_PROJECTS_DIR, Session, discover_sessions
+from .providers import available_providers
+from .sessions import Session, discover_sessions
 from .state import AppState
 
 _DEBOUNCE_MS = 2000
@@ -65,7 +66,7 @@ class SessionStore(GObject.Object):
         self._setup_monitors()
 
     def refresh(self) -> None:
-        """Rescan ~/.claude/projects off the main thread."""
+        """Rescan every installed agent's sessions off the main thread."""
         if self._scanning:
             return
         self._scanning = True
@@ -151,11 +152,9 @@ class SessionStore(GObject.Object):
         for monitor in self._monitors:
             monitor.cancel()
         self._monitors = []
-        paths = [CLAUDE_PROJECTS_DIR]
-        try:
-            paths += [p for p in CLAUDE_PROJECTS_DIR.iterdir() if p.is_dir()]
-        except OSError:
-            pass
+        paths: list = []
+        for provider in available_providers():
+            paths += provider.watch_dirs()
         for path in paths:
             try:
                 monitor = Gio.File.new_for_path(str(path)).monitor_directory(

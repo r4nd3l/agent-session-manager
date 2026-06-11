@@ -268,8 +268,8 @@ msgstr "Ouvrir la sélection dans des onglets"
 msgid "warning: project dir {cwd} no longer exists, starting in HOME"
 msgstr "avertissement : le répertoire de projet {cwd} n’existe plus, démarrage dans HOME"
 
-msgid "warning: `claude` not found in PATH — starting a plain shell"
-msgstr "avertissement : `claude` introuvable dans le PATH — démarrage d’un shell simple"
+msgid "warning: `{cli}` not found in PATH — starting a plain shell"
+msgstr "avertissement : `{cli}` introuvable dans le PATH — démarrage d’un shell simple"
 
 msgid "failed to start shell: {msg}"
 msgstr "échec du démarrage du shell : {msg}"
@@ -292,11 +292,14 @@ msgstr "Fermer"
 msgid "Toggle sidebar (F9)"
 msgstr "Afficher/masquer la barre latérale (F9)"
 
-msgid "New session in folder…"
-msgstr "Nouvelle session dans le dossier…"
+msgid "New {name} session…"
+msgstr "Nouvelle session {name}…"
 
-msgid "New Claude session (Ctrl+Shift+T)"
-msgstr "Nouvelle session Claude (Ctrl+Maj+T)"
+msgid "New session (Ctrl+Shift+T)"
+msgstr "Nouvelle session (Ctrl+Maj+T)"
+
+msgid "Agent"
+msgstr "Agent"
 
 msgid "Close all tabs"
 msgstr "Fermer tous les onglets"

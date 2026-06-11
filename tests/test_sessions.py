@@ -225,7 +225,10 @@ def test_parse_details_handles_garbage(tmp_path):
 
 
 def test_discover_handles_missing_dir(monkeypatch, tmp_path):
+    import claude_session_manager.providers as providers_mod
     import claude_session_manager.sessions as sessions_mod
 
     monkeypatch.setattr(sessions_mod, "CLAUDE_PROJECTS_DIR", tmp_path / "nope")
+    monkeypatch.setattr(providers_mod.ClaudeProvider, "available", lambda self: True)
+    monkeypatch.setattr(providers_mod.CursorProvider, "available", lambda self: False)
     assert discover_sessions() == []
