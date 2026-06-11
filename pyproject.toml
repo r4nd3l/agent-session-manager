@@ -34,6 +34,9 @@ build-backend = "setuptools.build_meta"
 [tool.setuptools.packages.find]
 include = ["claude_session_manager*"]
 
+[tool.setuptools.package-data]
+claude_session_manager = ["locale/*/LC_MESSAGES/*.mo"]
+
 [tool.ruff]
 line-length = 110
 target-version = "py310"

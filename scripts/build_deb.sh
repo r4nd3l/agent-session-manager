@@ -15,6 +15,9 @@ mkdir -p "$ROOT/dist"
 SITE="$BUILD/usr/lib/python3/dist-packages/claude_session_manager"
 mkdir -p "$SITE"
 cp "$ROOT"/claude_session_manager/*.py "$SITE/"
+if [ -d "$ROOT/claude_session_manager/locale" ]; then
+  cp -r "$ROOT/claude_session_manager/locale" "$SITE/"
+fi
 
 # -- executable ---------------------------------------------------------------
 mkdir -p "$BUILD/usr/bin"

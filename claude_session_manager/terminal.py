@@ -14,6 +14,7 @@ gi.require_version("Vte", "3.91")
 from gi.repository import Gdk, GLib, GObject, Gtk, Pango, Vte  # noqa: E402
 
 from . import themes  # noqa: E402
+from .i18n import _  # noqa: E402
 
 # PCRE2 flags for the find bar: multiline, case-insensitive.
 _PCRE2_CASELESS = 0x00000008
@@ -69,7 +70,9 @@ class TerminalTab(Gtk.Box):
     def _spawn(self, cwd: str | None, session_id: str | None) -> None:
         if cwd is None or not Path(cwd).is_dir():
             if cwd is not None:
-                self.feed_message(f"warning: project dir {cwd} no longer exists, starting in HOME")
+                self.feed_message(
+                    _("warning: project dir {cwd} no longer exists, starting in HOME").format(cwd=cwd)
+                )
             cwd = str(Path.home())
 
         # Run the user's interactive shell and type the claude command into it,
@@ -78,7 +81,7 @@ class TerminalTab(Gtk.Box):
         self._initial_command: str | None = None
         claude = shutil.which("claude")
         if claude is None:
-            self.feed_message("warning: `claude` not found in PATH — starting a plain shell")
+            self.feed_message(_("warning: `claude` not found in PATH — starting a plain shell"))
         else:
             command = shlex.quote(claude)
             if session_id is not None:
@@ -105,7 +108,7 @@ class TerminalTab(Gtk.Box):
 
     def _on_spawned(self, terminal: Vte.Terminal, pid: int, error: GLib.Error | None) -> None:
         if error is not None:
-            self.feed_message(f"failed to start shell: {error.message}")
+            self.feed_message(_("failed to start shell: {msg}").format(msg=error.message))
             return
         self._child_pid = pid
         if self._initial_command:
@@ -118,16 +121,16 @@ class TerminalTab(Gtk.Box):
 
     def _build_search_bar(self) -> Gtk.SearchBar:
         bar = Gtk.SearchBar()
-        self._search_entry = Gtk.SearchEntry(hexpand=True, placeholder_text="Find in terminal…")
+        self._search_entry = Gtk.SearchEntry(hexpand=True, placeholder_text=_("Find in terminal…"))
         self._search_entry.connect("search-changed", self._on_search_changed)
         self._search_entry.connect("activate", lambda *_: self._search_step(forward=False))
         self._search_entry.connect("next-match", lambda *_: self._search_step(forward=True))
         self._search_entry.connect("previous-match", lambda *_: self._search_step(forward=False))
         self._search_entry.connect("stop-search", lambda *_: self.hide_search())
 
-        prev_btn = Gtk.Button(icon_name="go-up-symbolic", tooltip_text="Previous match")
+        prev_btn = Gtk.Button(icon_name="go-up-symbolic", tooltip_text=_("Previous match"))
         prev_btn.connect("clicked", lambda *_: self._search_step(forward=False))
-        next_btn = Gtk.Button(icon_name="go-down-symbolic", tooltip_text="Next match")
+        next_btn = Gtk.Button(icon_name="go-down-symbolic", tooltip_text=_("Next match"))
         next_btn.connect("clicked", lambda *_: self._search_step(forward=True))
 
         box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)

@@ -1,0 +1,487 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the claude-session-manager package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: claude-session-manager\n"
+"Report-Msgid-Bugs-To: matemiller992@gmail.com\n"
+"POT-Creation-Date: 2026-06-11 15:19+0200\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: claude_session_manager/dialogs.py:26 claude_session_manager/sidebar.py:114
+msgid "Rename session"
+msgstr ""
+
+#: claude_session_manager/dialogs.py:27
+msgid "Custom name"
+msgstr ""
+
+#: claude_session_manager/dialogs.py:30 claude_session_manager/dialogs.py:51
+#: claude_session_manager/dialogs.py:70
+msgid "Cancel"
+msgstr ""
+
+#: claude_session_manager/dialogs.py:31 claude_session_manager/dialogs.py:52
+msgid "Save"
+msgstr ""
+
+#: claude_session_manager/dialogs.py:43
+msgid "Set tab emoji"
+msgstr ""
+
+#: claude_session_manager/dialogs.py:44
+msgid "Shown before the tab title. Leave empty to remove."
+msgstr ""
+
+#: claude_session_manager/dialogs.py:46
+msgid "e.g. 🚀"
+msgstr ""
+
+#: claude_session_manager/dialogs.py:83
+msgid "OK"
+msgstr ""
+
+#: claude_session_manager/dialogs.py:102
+msgid "No MCP servers configured"
+msgstr ""
+
+#: claude_session_manager/dialogs.py:107
+msgid "Global"
+msgstr ""
+
+#: claude_session_manager/dialogs.py:107
+msgid "Available to every project"
+msgstr ""
+
+#: claude_session_manager/dialogs.py:119 claude_session_manager/dialogs.py:124
+msgid "MCP Servers"
+msgstr ""
+
+#: claude_session_manager/dialogs.py:119
+msgid "Read-only"
+msgstr ""
+
+#: claude_session_manager/dialogs.py:136
+msgid "Reading transcript…"
+msgstr ""
+
+#: claude_session_manager/dialogs.py:150
+msgid "Session details"
+msgstr ""
+
+#: claude_session_manager/dialogs.py:165
+msgid "Session ID"
+msgstr ""
+
+#: claude_session_manager/dialogs.py:166
+msgid "Directory"
+msgstr ""
+
+#: claude_session_manager/dialogs.py:166
+msgid "unknown"
+msgstr ""
+
+#: claude_session_manager/dialogs.py:167
+msgid "Created"
+msgstr ""
+
+#: claude_session_manager/dialogs.py:168
+msgid "Last activity"
+msgstr ""
+
+#: claude_session_manager/dialogs.py:169
+msgid "Messages"
+msgstr ""
+
+#: claude_session_manager/dialogs.py:170
+msgid "Tool calls"
+msgstr ""
+
+#: claude_session_manager/dialogs.py:171
+msgid "Models"
+msgstr ""
+
+#: claude_session_manager/dialogs.py:173
+msgid "Tokens"
+msgstr ""
+
+#: claude_session_manager/dialogs.py:178
+msgid "Transcript size"
+msgstr ""
+
+#: claude_session_manager/dialogs.py:182
+msgid "MCP"
+msgstr ""
+
+#: claude_session_manager/dialogs.py:190
+msgid "Available to this project"
+msgstr ""
+
+#: claude_session_manager/dialogs.py:195
+msgid "Tools used in this session"
+msgstr ""
+
+#: claude_session_manager/dialogs.py:199
+msgid "Recent activity"
+msgstr ""
+
+#: claude_session_manager/dialogs.py:202
+msgid "You"
+msgstr ""
+
+#: claude_session_manager/dialogs.py:202
+msgid "Claude"
+msgstr ""
+
+#: claude_session_manager/prefs.py:57
+msgid "Follow system"
+msgstr ""
+
+#: claude_session_manager/prefs.py:58
+msgid "Light"
+msgstr ""
+
+#: claude_session_manager/prefs.py:59
+msgid "Dark"
+msgstr ""
+
+#: claude_session_manager/prefs.py:75 claude_session_manager/sidebar.py:217
+msgid "Preferences"
+msgstr ""
+
+#: claude_session_manager/prefs.py:79
+msgid "General"
+msgstr ""
+
+#: claude_session_manager/prefs.py:81
+msgid "Terminal"
+msgstr ""
+
+#: claude_session_manager/prefs.py:83
+msgid "Font"
+msgstr ""
+
+#: claude_session_manager/prefs.py:83
+msgid "Applies to all terminal tabs"
+msgstr ""
+
+#: claude_session_manager/prefs.py:93
+msgid "Reset to default font"
+msgstr ""
+
+#: claude_session_manager/prefs.py:99
+msgid "Scrollback lines"
+msgstr ""
+
+#: claude_session_manager/prefs.py:107
+msgid "Color theme"
+msgstr ""
+
+#: claude_session_manager/prefs.py:125
+msgid "Appearance"
+msgstr ""
+
+#: claude_session_manager/prefs.py:126
+msgid "Color scheme"
+msgstr ""
+
+#: claude_session_manager/prefs.py:136 claude_session_manager/prefs.py:139
+msgid "Language"
+msgstr ""
+
+#: claude_session_manager/prefs.py:140
+msgid "Restart to apply"
+msgstr ""
+
+#: claude_session_manager/prefs.py:151
+msgid "Notifications"
+msgstr ""
+
+#: claude_session_manager/prefs.py:153
+msgid "Notify when a session goes idle"
+msgstr ""
+
+#: claude_session_manager/prefs.py:154
+msgid "Desktop notification when a background tab stops producing output"
+msgstr ""
+
+#: claude_session_manager/sidebar.py:101
+msgid "Claude is waiting for your reply"
+msgstr ""
+
+#: claude_session_manager/sidebar.py:150 claude_session_manager/sidebar.py:421
+msgid "Remove from favorites"
+msgstr ""
+
+#: claude_session_manager/sidebar.py:150 claude_session_manager/sidebar.py:421
+msgid "Add to favorites"
+msgstr ""
+
+#: claude_session_manager/sidebar.py:207
+msgid "Sessions"
+msgstr ""
+
+#: claude_session_manager/sidebar.py:210
+msgid "Select sessions"
+msgstr ""
+
+#: claude_session_manager/sidebar.py:215
+msgid "Show hidden sessions"
+msgstr ""
+
+#: claude_session_manager/sidebar.py:216
+msgid "MCP servers"
+msgstr ""
+
+#: claude_session_manager/sidebar.py:218
+msgid "About Claude Session Manager"
+msgstr ""
+
+#: claude_session_manager/sidebar.py:222
+msgid "Refresh session list"
+msgstr ""
+
+#: claude_session_manager/sidebar.py:228
+msgid "Search sessions…"
+msgstr ""
+
+#: claude_session_manager/sidebar.py:233
+msgid "Collapse all groups"
+msgstr ""
+
+#: claude_session_manager/sidebar.py:238
+msgid "Expand all groups"
+msgstr ""
+
+#: claude_session_manager/sidebar.py:262
+msgid "No sessions found"
+msgstr ""
+
+#: claude_session_manager/sidebar.py:263
+msgid ""
+"Run claude in a project directory first — sessions will appear here "
+"automatically."
+msgstr ""
+
+#: claude_session_manager/sidebar.py:302
+#, python-brace-format
+msgid "{n} sessions"
+msgstr ""
+
+#: claude_session_manager/sidebar.py:303
+#, python-brace-format
+msgid "{n} projects"
+msgstr ""
+
+#: claude_session_manager/sidebar.py:307
+#, python-brace-format
+msgid "{n} open"
+msgstr ""
+
+#: claude_session_manager/sidebar.py:333
+msgid "Favorites"
+msgstr ""
+
+#: claude_session_manager/sidebar.py:413
+msgid "Open"
+msgstr ""
+
+#: claude_session_manager/sidebar.py:415
+msgid "Open in Ghostty"
+msgstr ""
+
+#: claude_session_manager/sidebar.py:416
+msgid "Fork session"
+msgstr ""
+
+#: claude_session_manager/sidebar.py:419 claude_session_manager/window.py:80
+msgid "Rename…"
+msgstr ""
+
+#: claude_session_manager/sidebar.py:424
+msgid "Details…"
+msgstr ""
+
+#: claude_session_manager/sidebar.py:425 claude_session_manager/window.py:82
+msgid "Copy session ID"
+msgstr ""
+
+#: claude_session_manager/sidebar.py:426
+msgid "Export as Markdown…"
+msgstr ""
+
+#: claude_session_manager/sidebar.py:427
+msgid "Reveal transcript"
+msgstr ""
+
+#: claude_session_manager/sidebar.py:430
+msgid "Unhide session"
+msgstr ""
+
+#: claude_session_manager/sidebar.py:430
+msgid "Hide session"
+msgstr ""
+
+#: claude_session_manager/sidebar.py:432
+msgid "Move transcript to trash…"
+msgstr ""
+
+#: claude_session_manager/sidebar.py:458
+msgid "All"
+msgstr ""
+
+#: claude_session_manager/sidebar.py:460
+msgid "Select all (filtered) sessions"
+msgstr ""
+
+#: claude_session_manager/sidebar.py:464
+msgid "None"
+msgstr ""
+
+#: claude_session_manager/sidebar.py:466
+msgid "Clear selection"
+msgstr ""
+
+#: claude_session_manager/sidebar.py:471
+msgid "Move selected transcripts to trash…"
+msgstr ""
+
+#: claude_session_manager/sidebar.py:472
+msgid "Hide selected"
+msgstr ""
+
+#: claude_session_manager/sidebar.py:473
+msgid "Remove selected from favorites"
+msgstr ""
+
+#: claude_session_manager/sidebar.py:474
+msgid "Add selected to favorites"
+msgstr ""
+
+#: claude_session_manager/sidebar.py:475
+msgid "Open selected in tabs"
+msgstr ""
+
+#: claude_session_manager/terminal.py:74
+#, python-brace-format
+msgid "warning: project dir {cwd} no longer exists, starting in HOME"
+msgstr ""
+
+#: claude_session_manager/terminal.py:84
+msgid "warning: `claude` not found in PATH — starting a plain shell"
+msgstr ""
+
+#: claude_session_manager/terminal.py:111
+#, python-brace-format
+msgid "failed to start shell: {msg}"
+msgstr ""
+
+#: claude_session_manager/terminal.py:124
+msgid "Find in terminal…"
+msgstr ""
+
+#: claude_session_manager/terminal.py:131
+msgid "Previous match"
+msgstr ""
+
+#: claude_session_manager/terminal.py:133
+msgid "Next match"
+msgstr ""
+
+#: claude_session_manager/window.py:81
+msgid "Set emoji…"
+msgstr ""
+
+#: claude_session_manager/window.py:83
+msgid "Close"
+msgstr ""
+
+#: claude_session_manager/window.py:91
+msgid "Toggle sidebar (F9)"
+msgstr ""
+
+#: claude_session_manager/window.py:95
+msgid "New session in folder…"
+msgstr ""
+
+#: claude_session_manager/window.py:97
+msgid "New Claude session (Ctrl+Shift+T)"
+msgstr ""
+
+#: claude_session_manager/window.py:103
+msgid "Close all tabs"
+msgstr ""
+
+#: claude_session_manager/window.py:113
+msgid "No session open"
+msgstr ""
+
+#: claude_session_manager/window.py:114
+msgid "Pick a session from the sidebar, or start a new one."
+msgstr ""
+
+#: claude_session_manager/window.py:265
+msgid "Some transcripts could not be trashed"
+msgstr ""
+
+#: claude_session_manager/window.py:269
+#, python-brace-format
+msgid "Move {n} transcript(s) to trash?"
+msgstr ""
+
+#: claude_session_manager/window.py:270
+msgid "The files are moved to the trash and can be restored."
+msgstr ""
+
+#: claude_session_manager/window.py:271 claude_session_manager/window.py:664
+msgid "Move to Trash"
+msgstr ""
+
+#: claude_session_manager/window.py:312
+msgid "Choose project directory"
+msgstr ""
+
+#: claude_session_manager/window.py:480
+msgid "Tab name"
+msgstr ""
+
+#: claude_session_manager/window.py:607
+msgid "Export session as Markdown"
+msgstr ""
+
+#: claude_session_manager/window.py:625
+msgid "Export failed"
+msgstr ""
+
+#: claude_session_manager/window.py:650
+msgid "Could not trash transcript"
+msgstr ""
+
+#: claude_session_manager/window.py:658
+msgid "Move transcript to trash?"
+msgstr ""
+
+#: claude_session_manager/window.py:659
+#, python-brace-format
+msgid "“{name}” will be removed from Claude's history."
+msgstr ""
+
+#: claude_session_manager/window.py:663
+msgid "The file is moved to the trash and can be restored."
+msgstr ""
+
+#: claude_session_manager/window.py:678
+msgid ""
+"Manage and resume Claude Code sessions.\n"
+"\n"
+"Unofficial community tool — not affiliated with or endorsed by Anthropic."
+msgstr ""

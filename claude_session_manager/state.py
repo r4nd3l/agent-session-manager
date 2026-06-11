@@ -21,6 +21,7 @@ DEFAULT_SETTINGS = {
     "scrollback": 10_000,
     "color_scheme": "system",  # system | light | dark
     "terminal_theme": "Default",  # VTE color palette (see themes.py)
+    "language": "",  # UI language code; "" = follow the system locale
     "notify_idle": True,  # notify when a background session goes quiet
     "new_session_dir": "",  # remembered folder for new sessions (empty = ask)
     "sidebar_width": 300,  # persisted sidebar pane width in px

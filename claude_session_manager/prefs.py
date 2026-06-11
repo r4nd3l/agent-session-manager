@@ -10,6 +10,7 @@ gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
 from gi.repository import Adw, Gtk, Pango  # noqa: E402
 
+from .i18n import LANGUAGES, N_, _
 from .state import AppState
 from .themes import DEFAULT_THEME, THEME_NAMES, get_theme
 
@@ -53,9 +54,9 @@ def _theme_swatch(name: str) -> Gtk.DrawingArea:
     return area
 
 _SCHEMES = [
-    ("system", "Follow system", Adw.ColorScheme.DEFAULT),
-    ("light", "Light", Adw.ColorScheme.FORCE_LIGHT),
-    ("dark", "Dark", Adw.ColorScheme.FORCE_DARK),
+    ("system", N_("Follow system"), Adw.ColorScheme.DEFAULT),
+    ("light", N_("Light"), Adw.ColorScheme.FORCE_LIGHT),
+    ("dark", N_("Dark"), Adw.ColorScheme.FORCE_DARK),
 ]
 
 
@@ -71,15 +72,15 @@ class PreferencesDialog(Adw.PreferencesDialog):
     push the new settings into open terminal tabs."""
 
     def __init__(self, state: AppState, on_change: Callable[[], None]) -> None:
-        super().__init__(title="Preferences")
+        super().__init__(title=_("Preferences"))
         self._state = state
         self._on_change = on_change
 
-        page = Adw.PreferencesPage(title="General", icon_name="preferences-system-symbolic")
+        page = Adw.PreferencesPage(title=_("General"), icon_name="preferences-system-symbolic")
 
-        terminal_group = Adw.PreferencesGroup(title="Terminal")
+        terminal_group = Adw.PreferencesGroup(title=_("Terminal"))
 
-        font_row = Adw.ActionRow(title="Font", subtitle="Applies to all terminal tabs")
+        font_row = Adw.ActionRow(title=_("Font"), subtitle=_("Applies to all terminal tabs"))
         self._font_button = Gtk.FontDialogButton(dialog=Gtk.FontDialog(), valign=Gtk.Align.CENTER)
         current_font = state.get_setting("font") or ""
         if current_font:
@@ -89,13 +90,13 @@ class PreferencesDialog(Adw.PreferencesDialog):
 
         reset_font = Gtk.Button(icon_name="edit-clear-symbolic", valign=Gtk.Align.CENTER)
         reset_font.add_css_class("flat")
-        reset_font.set_tooltip_text("Reset to default font")
+        reset_font.set_tooltip_text(_("Reset to default font"))
         reset_font.connect("clicked", self._on_font_reset)
         font_row.add_suffix(reset_font)
         terminal_group.add(font_row)
 
         scroll_row = Adw.SpinRow.new_with_range(1_000, 1_000_000, 1_000)
-        scroll_row.set_title("Scrollback lines")
+        scroll_row.set_title(_("Scrollback lines"))
         scroll_row.set_value(int(state.get_setting("scrollback") or 10_000))
         scroll_row.connect("notify::value", self._on_scrollback_changed)
         terminal_group.add(scroll_row)
@@ -103,7 +104,7 @@ class PreferencesDialog(Adw.PreferencesDialog):
         current_theme = state.get_setting("terminal_theme") or DEFAULT_THEME
         if current_theme not in THEME_NAMES:
             current_theme = DEFAULT_THEME
-        self._theme_expander = Adw.ExpanderRow(title="Color theme", subtitle=current_theme)
+        self._theme_expander = Adw.ExpanderRow(title=_("Color theme"), subtitle=current_theme)
         radio_group = None
         for name in THEME_NAMES:
             row = Adw.ActionRow(title=name)
@@ -121,9 +122,9 @@ class PreferencesDialog(Adw.PreferencesDialog):
         terminal_group.add(self._theme_expander)
         page.add(terminal_group)
 
-        appearance_group = Adw.PreferencesGroup(title="Appearance")
-        scheme_row = Adw.ComboRow(title="Color scheme")
-        scheme_row.set_model(Gtk.StringList.new([label for _k, label, _s in _SCHEMES]))
+        appearance_group = Adw.PreferencesGroup(title=_("Appearance"))
+        scheme_row = Adw.ComboRow(title=_("Color scheme"))
+        scheme_row.set_model(Gtk.StringList.new([_(label) for _k, label, _s in _SCHEMES]))
         current_scheme = state.get_setting("color_scheme") or "system"
         scheme_row.set_selected(
             next((i for i, (k, _l, _s) in enumerate(_SCHEMES) if k == current_scheme), 0)
@@ -132,10 +133,25 @@ class PreferencesDialog(Adw.PreferencesDialog):
         appearance_group.add(scheme_row)
         page.add(appearance_group)
 
-        notif_group = Adw.PreferencesGroup(title="Notifications")
+        lang_group = Adw.PreferencesGroup(title=_("Language"))
+        self._lang_codes = [code for code, _label in LANGUAGES]
+        self._lang_row = Adw.ComboRow(
+            title=_("Language"),
+            subtitle=_("Restart to apply"),
+        )
+        self._lang_row.set_model(Gtk.StringList.new([label for _code, label in LANGUAGES]))
+        current_lang = state.get_setting("language") or ""
+        self._lang_row.set_selected(
+            self._lang_codes.index(current_lang) if current_lang in self._lang_codes else 0
+        )
+        self._lang_row.connect("notify::selected", self._on_language_changed)
+        lang_group.add(self._lang_row)
+        page.add(lang_group)
+
+        notif_group = Adw.PreferencesGroup(title=_("Notifications"))
         self._notify_row = Adw.SwitchRow(
-            title="Notify when a session goes idle",
-            subtitle="Desktop notification when a background tab stops producing output",
+            title=_("Notify when a session goes idle"),
+            subtitle=_("Desktop notification when a background tab stops producing output"),
         )
         self._notify_row.set_active(bool(state.get_setting("notify_idle")))
         self._notify_row.connect("notify::active", self._on_notify_changed)
@@ -173,4 +189,8 @@ class PreferencesDialog(Adw.PreferencesDialog):
 
     def _on_notify_changed(self, row: Adw.SwitchRow, _pspec) -> None:
         self._state.set_setting("notify_idle", row.get_active())
+        self._on_change()
+
+    def _on_language_changed(self, row: Adw.ComboRow, _pspec) -> None:
+        self._state.set_setting("language", self._lang_codes[row.get_selected()])
         self._on_change()

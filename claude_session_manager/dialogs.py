@@ -12,6 +12,7 @@ gi.require_version("Adw", "1")
 from gi.repository import Adw, GLib, Gtk  # noqa: E402
 
 from .formatting import format_size, format_timestamp, format_tokens
+from .i18n import _
 from .sessions import (
     Session,
     SessionDetails,
@@ -22,12 +23,12 @@ from .sessions import (
 
 
 def rename_dialog(parent: Gtk.Widget, body: str, current: str, on_save: Callable[[str], None]) -> None:
-    dialog = Adw.AlertDialog(heading="Rename session", body=body)
-    entry = Gtk.Entry(text=current, placeholder_text="Custom name")
+    dialog = Adw.AlertDialog(heading=_("Rename session"), body=body)
+    entry = Gtk.Entry(text=current, placeholder_text=_("Custom name"))
     entry.set_activates_default(True)
     dialog.set_extra_child(entry)
-    dialog.add_response("cancel", "Cancel")
-    dialog.add_response("save", "Save")
+    dialog.add_response("cancel", _("Cancel"))
+    dialog.add_response("save", _("Save"))
     dialog.set_response_appearance("save", Adw.ResponseAppearance.SUGGESTED)
     dialog.set_default_response("save")
     dialog.connect(
@@ -39,16 +40,16 @@ def rename_dialog(parent: Gtk.Widget, body: str, current: str, on_save: Callable
 
 def emoji_dialog(parent: Gtk.Widget, current: str, on_save: Callable[[str], None]) -> None:
     dialog = Adw.AlertDialog(
-        heading="Set tab emoji",
-        body="Shown before the tab title. Leave empty to remove.",
+        heading=_("Set tab emoji"),
+        body=_("Shown before the tab title. Leave empty to remove."),
     )
-    entry = Gtk.Entry(text=current, placeholder_text="e.g. 🚀")
+    entry = Gtk.Entry(text=current, placeholder_text=_("e.g. 🚀"))
     entry.set_property("show-emoji-icon", True)  # click the 🙂 icon to pick one
     entry.set_property("enable-emoji-completion", True)
     entry.set_activates_default(True)
     dialog.set_extra_child(entry)
-    dialog.add_response("cancel", "Cancel")
-    dialog.add_response("save", "Save")
+    dialog.add_response("cancel", _("Cancel"))
+    dialog.add_response("save", _("Save"))
     dialog.set_response_appearance("save", Adw.ResponseAppearance.SUGGESTED)
     dialog.set_default_response("save")
     dialog.connect(
@@ -66,7 +67,7 @@ def confirm_dialog(
     on_confirm: Callable[[], None],
 ) -> None:
     dialog = Adw.AlertDialog(heading=heading, body=body)
-    dialog.add_response("cancel", "Cancel")
+    dialog.add_response("cancel", _("Cancel"))
     dialog.add_response("confirm", confirm_label)
     dialog.set_response_appearance("confirm", Adw.ResponseAppearance.DESTRUCTIVE)
     dialog.set_default_response("cancel")
@@ -79,7 +80,7 @@ def confirm_dialog(
 
 def error_dialog(parent: Gtk.Widget, heading: str, body: str) -> None:
     dialog = Adw.AlertDialog(heading=heading, body=body)
-    dialog.add_response("ok", "OK")
+    dialog.add_response("ok", _("OK"))
     dialog.present(parent)
 
 
@@ -98,12 +99,12 @@ def mcp_browser_dialog(parent: Gtk.Widget) -> None:
 
     if config.is_empty:
         empty = Adw.PreferencesGroup()
-        empty.add(Adw.ActionRow(title="No MCP servers configured"))
+        empty.add(Adw.ActionRow(title=_("No MCP servers configured")))
         page.add(empty)
     else:
         if config.global_servers:
             group = Adw.PreferencesGroup(
-                title="Global", description="Available to every project"
+                title=_("Global"), description=_("Available to every project")
             )
             for server in config.global_servers:
                 group.add(server_row(server.name, server.summary))
@@ -115,12 +116,12 @@ def mcp_browser_dialog(parent: Gtk.Widget) -> None:
             page.add(group)
 
     header = Adw.HeaderBar()
-    header.set_title_widget(Adw.WindowTitle(title="MCP Servers", subtitle="Read-only"))
+    header.set_title_widget(Adw.WindowTitle(title=_("MCP Servers"), subtitle=_("Read-only")))
     view = Adw.ToolbarView()
     view.add_top_bar(header)
     view.set_content(page)
 
-    dialog = Adw.Dialog(title="MCP Servers")
+    dialog = Adw.Dialog(title=_("MCP Servers"))
     dialog.set_content_width(540)
     dialog.set_content_height(600)
     dialog.set_child(view)
@@ -132,7 +133,7 @@ def mcp_browser_dialog(parent: Gtk.Widget) -> None:
 
 def details_dialog(parent: Gtk.Widget, session: Session, title: str) -> None:
     group = Adw.PreferencesGroup()
-    spinner_row = Adw.ActionRow(title="Reading transcript…")
+    spinner_row = Adw.ActionRow(title=_("Reading transcript…"))
     spinner = Gtk.Spinner(spinning=True, valign=Gtk.Align.CENTER)
     spinner_row.add_suffix(spinner)
     group.add(spinner_row)
@@ -146,7 +147,7 @@ def details_dialog(parent: Gtk.Widget, session: Session, title: str) -> None:
     view.add_top_bar(header)
     view.set_content(page)
 
-    dialog = Adw.Dialog(title="Session details")
+    dialog = Adw.Dialog(title=_("Session details"))
     dialog.set_content_width(480)
     dialog.set_content_height(560)
     dialog.set_child(view)
@@ -161,24 +162,24 @@ def details_dialog(parent: Gtk.Widget, session: Session, title: str) -> None:
             row.add_css_class("property")
             info.add(row)
 
-        add("Session ID", session.session_id)
-        add("Directory", session.cwd or "unknown")
-        add("Created", format_timestamp(details.first_timestamp))
-        add("Last activity", format_timestamp(details.last_timestamp))
-        add("Messages", f"{details.user_messages} user · {details.assistant_messages} assistant")
-        add("Tool calls", str(details.tool_calls))
-        add("Models", ", ".join(details.models) or "—")
+        add(_("Session ID"), session.session_id)
+        add(_("Directory"), session.cwd or _("unknown"))
+        add(_("Created"), format_timestamp(details.first_timestamp))
+        add(_("Last activity"), format_timestamp(details.last_timestamp))
+        add(_("Messages"), f"{details.user_messages} user · {details.assistant_messages} assistant")
+        add(_("Tool calls"), str(details.tool_calls))
+        add(_("Models"), ", ".join(details.models) or "—")
         add(
-            "Tokens",
+            _("Tokens"),
             f"{format_tokens(details.input_tokens)} in · "
             f"{format_tokens(details.output_tokens)} out · "
             f"{format_tokens(details.cache_read_tokens)} cache-read",
         )
-        add("Transcript size", format_size(details.file_size))
+        add(_("Transcript size"), format_size(details.file_size))
         page.add(info)
 
         if mcp_servers or details.mcp_tools:
-            mcp = Adw.PreferencesGroup(title="MCP")
+            mcp = Adw.PreferencesGroup(title=_("MCP"))
 
             def mcp_row(row_title: str, value: str) -> None:
                 row = Adw.ActionRow(title=row_title, subtitle=value)
@@ -186,19 +187,19 @@ def details_dialog(parent: Gtk.Widget, session: Session, title: str) -> None:
                 row.add_css_class("property")
                 mcp.add(row)
 
-            mcp_row("Available to this project", ", ".join(mcp_servers) or "—")
+            mcp_row(_("Available to this project"), ", ".join(mcp_servers) or "—")
             used = " · ".join(
                 f"{server}: {count}"
                 for server, count in sorted(details.mcp_tools.items(), key=lambda kv: -kv[1])
             )
-            mcp_row("Tools used in this session", used or "—")
+            mcp_row(_("Tools used in this session"), used or "—")
             page.add(mcp)
 
         if details.messages:
-            recent = Adw.PreferencesGroup(title="Recent activity")
+            recent = Adw.PreferencesGroup(title=_("Recent activity"))
             for role, text in details.messages:
                 row = Adw.ActionRow(
-                    title="You" if role == "user" else "Claude",
+                    title=_("You") if role == "user" else _("Claude"),
                     subtitle=text,
                 )
                 row.set_property("subtitle-lines", 0)  # wrap, no truncation

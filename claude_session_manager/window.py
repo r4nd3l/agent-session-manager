@@ -14,6 +14,7 @@ gi.require_version("Adw", "1")
 from gi.repository import Adw, Gio, GLib, GObject, Gtk  # noqa: E402
 
 from . import __version__, dialogs
+from .i18n import _
 from .models import SessionItem
 from .prefs import PreferencesDialog, apply_color_scheme
 from .sessions import Session, export_markdown
@@ -76,10 +77,10 @@ class MainWindow(Adw.ApplicationWindow):
         self.tab_view.connect("setup-menu", self._on_tab_setup_menu)
 
         tab_menu = Gio.Menu()
-        tab_menu.append("Rename…", "win.rename-tab")
-        tab_menu.append("Set emoji…", "win.set-tab-emoji")
-        tab_menu.append("Copy session ID", "win.copy-tab-session-id")
-        tab_menu.append("Close", "win.close-menu-tab")
+        tab_menu.append(_("Rename…"), "win.rename-tab")
+        tab_menu.append(_("Set emoji…"), "win.set-tab-emoji")
+        tab_menu.append(_("Copy session ID"), "win.copy-tab-session-id")
+        tab_menu.append(_("Close"), "win.close-menu-tab")
         self.tab_view.set_menu_model(tab_menu)
 
         tab_bar = Adw.TabBar(view=self.tab_view)
@@ -87,19 +88,19 @@ class MainWindow(Adw.ApplicationWindow):
 
         content_header = Adw.HeaderBar()
         self.sidebar_toggle = Gtk.ToggleButton(icon_name="sidebar-show-symbolic", active=True)
-        self.sidebar_toggle.set_tooltip_text("Toggle sidebar (F9)")
+        self.sidebar_toggle.set_tooltip_text(_("Toggle sidebar (F9)"))
         content_header.pack_start(self.sidebar_toggle)
 
         new_menu = Gio.Menu()
-        new_menu.append("New session in folder…", "win.new-session-choose")
+        new_menu.append(_("New session in folder…"), "win.new-session-choose")
         new_btn = Adw.SplitButton(icon_name="tab-new-symbolic")
-        new_btn.set_tooltip_text("New Claude session (Ctrl+Shift+T)")
+        new_btn.set_tooltip_text(_("New Claude session (Ctrl+Shift+T)"))
         new_btn.set_menu_model(new_menu)
         new_btn.connect("clicked", lambda *_: self._new_session())
         content_header.pack_start(new_btn)
 
         self.close_all_btn = Gtk.Button(icon_name="tab-close-symbolic", visible=False)
-        self.close_all_btn.set_tooltip_text("Close all tabs")
+        self.close_all_btn.set_tooltip_text(_("Close all tabs"))
         self.close_all_btn.connect("clicked", lambda *_: self._close_all_tabs())
         content_header.pack_start(self.close_all_btn)
         self.tab_view.connect(
@@ -109,8 +110,8 @@ class MainWindow(Adw.ApplicationWindow):
 
         placeholder = Adw.StatusPage(
             icon_name="utilities-terminal-symbolic",
-            title="No session open",
-            description="Pick a session from the sidebar, or start a new one.",
+            title=_("No session open"),
+            description=_("Pick a session from the sidebar, or start a new one."),
         )
 
         self.content_stack = Gtk.Stack()
@@ -261,13 +262,13 @@ class MainWindow(Adw.ApplicationWindow):
                 if page is not None:
                     self.tab_view.close_page(page)
             if errors:
-                dialogs.error_dialog(self, "Some transcripts could not be trashed", "\n".join(errors))
+                dialogs.error_dialog(self, _("Some transcripts could not be trashed"), "\n".join(errors))
 
         dialogs.confirm_dialog(
             self,
-            f"Move {len(items)} transcript(s) to trash?",
-            "The files are moved to the trash and can be restored.",
-            "Move to Trash",
+            _("Move {n} transcript(s) to trash?").format(n=len(items)),
+            _("The files are moved to the trash and can be restored."),
+            _("Move to Trash"),
             do_trash,
         )
 
@@ -308,7 +309,7 @@ class MainWindow(Adw.ApplicationWindow):
             self._choose_new_session_folder()
 
     def _choose_new_session_folder(self) -> None:
-        dialog = Gtk.FileDialog(title="Choose project directory")
+        dialog = Gtk.FileDialog(title=_("Choose project directory"))
         default = self.state.get_setting("new_session_dir")
         if default and Path(default).is_dir():
             dialog.set_initial_folder(Gio.File.new_for_path(default))
@@ -476,7 +477,7 @@ class MainWindow(Adw.ApplicationWindow):
         # fork / new-session tab → local title rename only
         dialogs.rename_dialog(
             self,
-            "Tab name",
+            _("Tab name"),
             page.get_title(),
             lambda name: page.set_title(name.strip() or page.get_title()),
         )
@@ -603,7 +604,7 @@ class MainWindow(Adw.ApplicationWindow):
             return
         title = self.store.display_name(session)
         safe = "".join(c if c.isalnum() or c in " -_" else "_" for c in title).strip() or "session"
-        dialog = Gtk.FileDialog(title="Export session as Markdown", initial_name=f"{safe}.md")
+        dialog = Gtk.FileDialog(title=_("Export session as Markdown"), initial_name=f"{safe}.md")
         dialog.save(self, None, lambda d, r: self._on_export_save(d, r, session, title))
 
     def _on_export_save(self, dialog: Gtk.FileDialog, result, session: Session, title: str) -> None:
@@ -621,7 +622,7 @@ class MainWindow(Adw.ApplicationWindow):
             except OSError as err:
                 error = str(err)
             if error:
-                GLib.idle_add(dialogs.error_dialog, self, "Export failed", error)
+                GLib.idle_add(dialogs.error_dialog, self, _("Export failed"), error)
 
         threading.Thread(target=work, daemon=True).start()
 
@@ -646,7 +647,7 @@ class MainWindow(Adw.ApplicationWindow):
         def do_trash() -> None:
             error = self.store.trash(session.session_id)
             if error:
-                dialogs.error_dialog(self, "Could not trash transcript", error)
+                dialogs.error_dialog(self, _("Could not trash transcript"), error)
                 return
             page = self._pages.get(session.session_id)
             if page is not None:
@@ -654,10 +655,13 @@ class MainWindow(Adw.ApplicationWindow):
 
         dialogs.confirm_dialog(
             self,
-            "Move transcript to trash?",
-            f"“{self.store.display_name(session)}” will be removed from Claude's history.\n"
-            "The file is moved to the trash and can be restored.",
-            "Move to Trash",
+            _("Move transcript to trash?"),
+            _("“{name}” will be removed from Claude's history.").format(
+                name=self.store.display_name(session)
+            )
+            + "\n"
+            + _("The file is moved to the trash and can be restored."),
+            _("Move to Trash"),
             do_trash,
         )
 
@@ -671,8 +675,8 @@ class MainWindow(Adw.ApplicationWindow):
             version=__version__,
             license_type=Gtk.License.GPL_3_0,
             comments=(
-                "Manage and resume Claude Code sessions.\n\n"
-                "Unofficial community tool — not affiliated with or endorsed by Anthropic."
+                _("Manage and resume Claude Code sessions.\n\n"
+                "Unofficial community tool — not affiliated with or endorsed by Anthropic.")
             ),
             website="https://github.com/r4nd3l/claude-session-manager",
             issue_url="https://github.com/r4nd3l/claude-session-manager/issues",

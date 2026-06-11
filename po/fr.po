@@ -1,0 +1,345 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: claude-session-manager\n"
+"Language: fr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "Rename session"
+msgstr "Renommer la session"
+
+msgid "Custom name"
+msgstr "Nom personnalisé"
+
+msgid "Cancel"
+msgstr "Annuler"
+
+msgid "Save"
+msgstr "Enregistrer"
+
+msgid "Set tab emoji"
+msgstr "Définir l’emoji de l’onglet"
+
+msgid "Shown before the tab title. Leave empty to remove."
+msgstr "Affiché avant le titre de l’onglet. Laisser vide pour le retirer."
+
+msgid "e.g. 🚀"
+msgstr "p. ex. 🚀"
+
+msgid "OK"
+msgstr "OK"
+
+msgid "No MCP servers configured"
+msgstr "Aucun serveur MCP configuré"
+
+msgid "Global"
+msgstr "Global"
+
+msgid "Available to every project"
+msgstr "Disponible pour tous les projets"
+
+msgid "MCP Servers"
+msgstr "Serveurs MCP"
+
+msgid "Read-only"
+msgstr "Lecture seule"
+
+msgid "Reading transcript…"
+msgstr "Lecture de la transcription…"
+
+msgid "Session details"
+msgstr "Détails de la session"
+
+msgid "Session ID"
+msgstr "ID de session"
+
+msgid "Directory"
+msgstr "Répertoire"
+
+msgid "unknown"
+msgstr "inconnu"
+
+msgid "Created"
+msgstr "Créée"
+
+msgid "Last activity"
+msgstr "Dernière activité"
+
+msgid "Messages"
+msgstr "Messages"
+
+msgid "Tool calls"
+msgstr "Appels d’outils"
+
+msgid "Models"
+msgstr "Modèles"
+
+msgid "Tokens"
+msgstr "Jetons"
+
+msgid "Transcript size"
+msgstr "Taille de la transcription"
+
+msgid "MCP"
+msgstr "MCP"
+
+msgid "Available to this project"
+msgstr "Disponible pour ce projet"
+
+msgid "Tools used in this session"
+msgstr "Outils utilisés dans cette session"
+
+msgid "Recent activity"
+msgstr "Activité récente"
+
+msgid "You"
+msgstr "Vous"
+
+msgid "Claude"
+msgstr "Claude"
+
+msgid "Follow system"
+msgstr "Suivre le système"
+
+msgid "Light"
+msgstr "Clair"
+
+msgid "Dark"
+msgstr "Sombre"
+
+msgid "Preferences"
+msgstr "Préférences"
+
+msgid "General"
+msgstr "Général"
+
+msgid "Terminal"
+msgstr "Terminal"
+
+msgid "Font"
+msgstr "Police"
+
+msgid "Applies to all terminal tabs"
+msgstr "S’applique à tous les onglets de terminal"
+
+msgid "Reset to default font"
+msgstr "Réinitialiser la police par défaut"
+
+msgid "Scrollback lines"
+msgstr "Lignes d’historique"
+
+msgid "Color theme"
+msgstr "Thème de couleurs"
+
+msgid "Appearance"
+msgstr "Apparence"
+
+msgid "Color scheme"
+msgstr "Schéma de couleurs"
+
+msgid "Language"
+msgstr "Langue"
+
+msgid "Restart to apply"
+msgstr "Redémarrer pour appliquer"
+
+msgid "Notifications"
+msgstr "Notifications"
+
+msgid "Notify when a session goes idle"
+msgstr "Notifier lorsqu’une session devient inactive"
+
+msgid "Desktop notification when a background tab stops producing output"
+msgstr "Notification de bureau lorsqu’un onglet en arrière-plan cesse de produire une sortie"
+
+msgid "Claude is waiting for your reply"
+msgstr "Claude attend votre réponse"
+
+msgid "Remove from favorites"
+msgstr "Retirer des favoris"
+
+msgid "Add to favorites"
+msgstr "Ajouter aux favoris"
+
+msgid "Sessions"
+msgstr "Sessions"
+
+msgid "Select sessions"
+msgstr "Sélectionner des sessions"
+
+msgid "Show hidden sessions"
+msgstr "Afficher les sessions masquées"
+
+msgid "MCP servers"
+msgstr "Serveurs MCP"
+
+msgid "About Claude Session Manager"
+msgstr "À propos de Claude Session Manager"
+
+msgid "Refresh session list"
+msgstr "Actualiser la liste des sessions"
+
+msgid "Search sessions…"
+msgstr "Rechercher des sessions…"
+
+msgid "Collapse all groups"
+msgstr "Réduire tous les groupes"
+
+msgid "Expand all groups"
+msgstr "Développer tous les groupes"
+
+msgid "No sessions found"
+msgstr "Aucune session trouvée"
+
+msgid "{n} sessions"
+msgstr "{n} sessions"
+
+msgid "{n} projects"
+msgstr "{n} projets"
+
+msgid "{n} open"
+msgstr "{n} ouvertes"
+
+msgid "Favorites"
+msgstr "Favoris"
+
+msgid "Open"
+msgstr "Ouvrir"
+
+msgid "Open in Ghostty"
+msgstr "Ouvrir dans Ghostty"
+
+msgid "Fork session"
+msgstr "Bifurquer la session"
+
+msgid "Rename…"
+msgstr "Renommer…"
+
+msgid "Details…"
+msgstr "Détails…"
+
+msgid "Copy session ID"
+msgstr "Copier l’ID de session"
+
+msgid "Export as Markdown…"
+msgstr "Exporter en Markdown…"
+
+msgid "Reveal transcript"
+msgstr "Afficher la transcription"
+
+msgid "Unhide session"
+msgstr "Afficher la session"
+
+msgid "Hide session"
+msgstr "Masquer la session"
+
+msgid "Move transcript to trash…"
+msgstr "Mettre la transcription à la corbeille…"
+
+msgid "All"
+msgstr "Tout"
+
+msgid "Select all (filtered) sessions"
+msgstr "Sélectionner toutes les sessions (filtrées)"
+
+msgid "None"
+msgstr "Aucune"
+
+msgid "Clear selection"
+msgstr "Effacer la sélection"
+
+msgid "Move selected transcripts to trash…"
+msgstr "Mettre les transcriptions sélectionnées à la corbeille…"
+
+msgid "Hide selected"
+msgstr "Masquer la sélection"
+
+msgid "Remove selected from favorites"
+msgstr "Retirer la sélection des favoris"
+
+msgid "Add selected to favorites"
+msgstr "Ajouter la sélection aux favoris"
+
+msgid "Open selected in tabs"
+msgstr "Ouvrir la sélection dans des onglets"
+
+msgid "warning: project dir {cwd} no longer exists, starting in HOME"
+msgstr "avertissement : le répertoire de projet {cwd} n’existe plus, démarrage dans HOME"
+
+msgid "warning: `claude` not found in PATH — starting a plain shell"
+msgstr "avertissement : `claude` introuvable dans le PATH — démarrage d’un shell simple"
+
+msgid "failed to start shell: {msg}"
+msgstr "échec du démarrage du shell : {msg}"
+
+msgid "Find in terminal…"
+msgstr "Rechercher dans le terminal…"
+
+msgid "Previous match"
+msgstr "Correspondance précédente"
+
+msgid "Next match"
+msgstr "Correspondance suivante"
+
+msgid "Set emoji…"
+msgstr "Définir un emoji…"
+
+msgid "Close"
+msgstr "Fermer"
+
+msgid "Toggle sidebar (F9)"
+msgstr "Afficher/masquer la barre latérale (F9)"
+
+msgid "New session in folder…"
+msgstr "Nouvelle session dans le dossier…"
+
+msgid "New Claude session (Ctrl+Shift+T)"
+msgstr "Nouvelle session Claude (Ctrl+Maj+T)"
+
+msgid "Close all tabs"
+msgstr "Fermer tous les onglets"
+
+msgid "No session open"
+msgstr "Aucune session ouverte"
+
+msgid "Pick a session from the sidebar, or start a new one."
+msgstr "Choisissez une session dans la barre latérale, ou démarrez-en une nouvelle."
+
+msgid "Some transcripts could not be trashed"
+msgstr "Certaines transcriptions n’ont pas pu être mises à la corbeille"
+
+msgid "Move {n} transcript(s) to trash?"
+msgstr "Mettre {n} transcription(s) à la corbeille ?"
+
+msgid "The files are moved to the trash and can be restored."
+msgstr "Les fichiers sont mis à la corbeille et peuvent être restaurés."
+
+msgid "Move to Trash"
+msgstr "Mettre à la corbeille"
+
+msgid "Choose project directory"
+msgstr "Choisir le répertoire du projet"
+
+msgid "Tab name"
+msgstr "Nom de l’onglet"
+
+msgid "Export session as Markdown"
+msgstr "Exporter la session en Markdown"
+
+msgid "Export failed"
+msgstr "Échec de l’exportation"
+
+msgid "Could not trash transcript"
+msgstr "Impossible de mettre la transcription à la corbeille"
+
+msgid "Move transcript to trash?"
+msgstr "Mettre la transcription à la corbeille ?"
+
+msgid "“{name}” will be removed from Claude's history."
+msgstr "« {name} » sera retiré de l’historique de Claude."
+
+msgid "The file is moved to the trash and can be restored."
+msgstr "Le fichier est mis à la corbeille et peut être restauré."
+

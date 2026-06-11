@@ -1,0 +1,345 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: claude-session-manager\n"
+"Language: hu\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "Rename session"
+msgstr "Munkamenet átnevezése"
+
+msgid "Custom name"
+msgstr "Egyéni név"
+
+msgid "Cancel"
+msgstr "Mégse"
+
+msgid "Save"
+msgstr "Mentés"
+
+msgid "Set tab emoji"
+msgstr "Lap emodzsi beállítása"
+
+msgid "Shown before the tab title. Leave empty to remove."
+msgstr "A lap címe előtt jelenik meg. Hagyd üresen az eltávolításhoz."
+
+msgid "e.g. 🚀"
+msgstr "pl. 🚀"
+
+msgid "OK"
+msgstr "OK"
+
+msgid "No MCP servers configured"
+msgstr "Nincs konfigurált MCP-kiszolgáló"
+
+msgid "Global"
+msgstr "Globális"
+
+msgid "Available to every project"
+msgstr "Minden projekthez elérhető"
+
+msgid "MCP Servers"
+msgstr "MCP-kiszolgálók"
+
+msgid "Read-only"
+msgstr "Csak olvasható"
+
+msgid "Reading transcript…"
+msgstr "Átirat olvasása…"
+
+msgid "Session details"
+msgstr "Munkamenet részletei"
+
+msgid "Session ID"
+msgstr "Munkamenet-azonosító"
+
+msgid "Directory"
+msgstr "Könyvtár"
+
+msgid "unknown"
+msgstr "ismeretlen"
+
+msgid "Created"
+msgstr "Létrehozva"
+
+msgid "Last activity"
+msgstr "Utolsó tevékenység"
+
+msgid "Messages"
+msgstr "Üzenetek"
+
+msgid "Tool calls"
+msgstr "Eszközhívások"
+
+msgid "Models"
+msgstr "Modellek"
+
+msgid "Tokens"
+msgstr "Tokenek"
+
+msgid "Transcript size"
+msgstr "Átirat mérete"
+
+msgid "MCP"
+msgstr "MCP"
+
+msgid "Available to this project"
+msgstr "Ehhez a projekthez elérhető"
+
+msgid "Tools used in this session"
+msgstr "A munkamenetben használt eszközök"
+
+msgid "Recent activity"
+msgstr "Legutóbbi tevékenység"
+
+msgid "You"
+msgstr "Te"
+
+msgid "Claude"
+msgstr "Claude"
+
+msgid "Follow system"
+msgstr "Rendszer követése"
+
+msgid "Light"
+msgstr "Világos"
+
+msgid "Dark"
+msgstr "Sötét"
+
+msgid "Preferences"
+msgstr "Beállítások"
+
+msgid "General"
+msgstr "Általános"
+
+msgid "Terminal"
+msgstr "Terminál"
+
+msgid "Font"
+msgstr "Betűtípus"
+
+msgid "Applies to all terminal tabs"
+msgstr "Minden terminállapra érvényes"
+
+msgid "Reset to default font"
+msgstr "Visszaállítás az alapértelmezett betűtípusra"
+
+msgid "Scrollback lines"
+msgstr "Visszagörgetési sorok"
+
+msgid "Color theme"
+msgstr "Színtéma"
+
+msgid "Appearance"
+msgstr "Megjelenés"
+
+msgid "Color scheme"
+msgstr "Színséma"
+
+msgid "Language"
+msgstr "Nyelv"
+
+msgid "Restart to apply"
+msgstr "Újraindítás szükséges"
+
+msgid "Notifications"
+msgstr "Értesítések"
+
+msgid "Notify when a session goes idle"
+msgstr "Értesítés, ha egy munkamenet tétlenné válik"
+
+msgid "Desktop notification when a background tab stops producing output"
+msgstr "Asztali értesítés, amikor egy háttérlap abbahagyja a kimenet előállítását"
+
+msgid "Claude is waiting for your reply"
+msgstr "A Claude a válaszodra vár"
+
+msgid "Remove from favorites"
+msgstr "Eltávolítás a kedvencekből"
+
+msgid "Add to favorites"
+msgstr "Hozzáadás a kedvencekhez"
+
+msgid "Sessions"
+msgstr "Munkamenetek"
+
+msgid "Select sessions"
+msgstr "Munkamenetek kijelölése"
+
+msgid "Show hidden sessions"
+msgstr "Rejtett munkamenetek megjelenítése"
+
+msgid "MCP servers"
+msgstr "MCP-kiszolgálók"
+
+msgid "About Claude Session Manager"
+msgstr "A Claude Session Manager névjegye"
+
+msgid "Refresh session list"
+msgstr "Munkamenetlista frissítése"
+
+msgid "Search sessions…"
+msgstr "Munkamenetek keresése…"
+
+msgid "Collapse all groups"
+msgstr "Összes csoport összecsukása"
+
+msgid "Expand all groups"
+msgstr "Összes csoport kibontása"
+
+msgid "No sessions found"
+msgstr "Nincs találat"
+
+msgid "{n} sessions"
+msgstr "{n} munkamenet"
+
+msgid "{n} projects"
+msgstr "{n} projekt"
+
+msgid "{n} open"
+msgstr "{n} megnyitva"
+
+msgid "Favorites"
+msgstr "Kedvencek"
+
+msgid "Open"
+msgstr "Megnyitás"
+
+msgid "Open in Ghostty"
+msgstr "Megnyitás Ghosttyban"
+
+msgid "Fork session"
+msgstr "Munkamenet elágaztatása"
+
+msgid "Rename…"
+msgstr "Átnevezés…"
+
+msgid "Details…"
+msgstr "Részletek…"
+
+msgid "Copy session ID"
+msgstr "Munkamenet-azonosító másolása"
+
+msgid "Export as Markdown…"
+msgstr "Exportálás Markdownként…"
+
+msgid "Reveal transcript"
+msgstr "Átirat megjelenítése"
+
+msgid "Unhide session"
+msgstr "Munkamenet felfedése"
+
+msgid "Hide session"
+msgstr "Munkamenet elrejtése"
+
+msgid "Move transcript to trash…"
+msgstr "Átirat kukába helyezése…"
+
+msgid "All"
+msgstr "Mind"
+
+msgid "Select all (filtered) sessions"
+msgstr "Az összes (szűrt) munkamenet kijelölése"
+
+msgid "None"
+msgstr "Egyik sem"
+
+msgid "Clear selection"
+msgstr "Kijelölés törlése"
+
+msgid "Move selected transcripts to trash…"
+msgstr "Kijelölt átiratok kukába helyezése…"
+
+msgid "Hide selected"
+msgstr "Kijelöltek elrejtése"
+
+msgid "Remove selected from favorites"
+msgstr "Kijelöltek eltávolítása a kedvencekből"
+
+msgid "Add selected to favorites"
+msgstr "Kijelöltek hozzáadása a kedvencekhez"
+
+msgid "Open selected in tabs"
+msgstr "Kijelöltek megnyitása lapokon"
+
+msgid "warning: project dir {cwd} no longer exists, starting in HOME"
+msgstr "figyelmeztetés: a(z) {cwd} projektkönyvtár már nem létezik, indítás a HOME-ban"
+
+msgid "warning: `claude` not found in PATH — starting a plain shell"
+msgstr "figyelmeztetés: a `claude` nem található a PATH-ban — egyszerű parancsértelmező indítása"
+
+msgid "failed to start shell: {msg}"
+msgstr "nem sikerült elindítani a parancsértelmezőt: {msg}"
+
+msgid "Find in terminal…"
+msgstr "Keresés a terminálban…"
+
+msgid "Previous match"
+msgstr "Előző találat"
+
+msgid "Next match"
+msgstr "Következő találat"
+
+msgid "Set emoji…"
+msgstr "Emodzsi beállítása…"
+
+msgid "Close"
+msgstr "Bezárás"
+
+msgid "Toggle sidebar (F9)"
+msgstr "Oldalsáv ki/be (F9)"
+
+msgid "New session in folder…"
+msgstr "Új munkamenet mappában…"
+
+msgid "New Claude session (Ctrl+Shift+T)"
+msgstr "Új Claude-munkamenet (Ctrl+Shift+T)"
+
+msgid "Close all tabs"
+msgstr "Összes lap bezárása"
+
+msgid "No session open"
+msgstr "Nincs megnyitott munkamenet"
+
+msgid "Pick a session from the sidebar, or start a new one."
+msgstr "Válassz egy munkamenetet az oldalsávból, vagy indíts egy újat."
+
+msgid "Some transcripts could not be trashed"
+msgstr "Néhány átiratot nem sikerült a kukába helyezni"
+
+msgid "Move {n} transcript(s) to trash?"
+msgstr "{n} átirat kukába helyezése?"
+
+msgid "The files are moved to the trash and can be restored."
+msgstr "A fájlok a kukába kerülnek, és visszaállíthatók."
+
+msgid "Move to Trash"
+msgstr "Kukába"
+
+msgid "Choose project directory"
+msgstr "Válassz projektkönyvtárat"
+
+msgid "Tab name"
+msgstr "Lap neve"
+
+msgid "Export session as Markdown"
+msgstr "Munkamenet exportálása Markdownként"
+
+msgid "Export failed"
+msgstr "Az exportálás sikertelen"
+
+msgid "Could not trash transcript"
+msgstr "Az átiratot nem sikerült a kukába helyezni"
+
+msgid "Move transcript to trash?"
+msgstr "Átirat kukába helyezése?"
+
+msgid "“{name}” will be removed from Claude's history."
+msgstr "A(z) „{name}” eltávolításra kerül a Claude előzményeiből."
+
+msgid "The file is moved to the trash and can be restored."
+msgstr "A fájl a kukába kerül, és visszaállítható."
+

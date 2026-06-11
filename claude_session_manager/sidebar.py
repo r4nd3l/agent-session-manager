@@ -20,6 +20,7 @@ gi.require_version("Adw", "1")
 from gi.repository import Adw, Gdk, Gio, GLib, GObject, Gtk  # noqa: E402
 
 from .formatting import format_size
+from .i18n import _
 from .models import FAV_GROUP, SessionItem
 from .store import SessionStore
 
@@ -97,7 +98,7 @@ class SessionRow(Gtk.ListBoxRow):
 
         waiting = Gtk.Image(icon_name="dialog-question-symbolic", valign=Gtk.Align.CENTER)
         waiting.add_css_class("waiting-badge")
-        waiting.set_tooltip_text("Claude is waiting for your reply")
+        waiting.set_tooltip_text(_("Claude is waiting for your reply"))
         top.append(waiting)
 
         star = Gtk.Button(valign=Gtk.Align.CENTER)
@@ -110,7 +111,7 @@ class SessionRow(Gtk.ListBoxRow):
 
         rename = Gtk.Button(icon_name="document-edit-symbolic", valign=Gtk.Align.CENTER)
         rename.add_css_class("flat")
-        rename.set_tooltip_text("Rename session")
+        rename.set_tooltip_text(_("Rename session"))
         rename.connect(
             "clicked",
             lambda *_: self.activate_action("win.rename-session", GLib.Variant("s", item.session_id)),
@@ -146,7 +147,7 @@ class SessionRow(Gtk.ListBoxRow):
         )
         item.bind_property(
             "favorite", star, "tooltip-text", flags,
-            lambda _b, fav: "Remove from favorites" if fav else "Add to favorites",
+            lambda _b, fav: _("Remove from favorites") if fav else _("Add to favorites"),
         )
         item.bind_property("waiting", waiting, "visible", flags)
 
@@ -203,38 +204,38 @@ class SessionSidebar(Gtk.Box):
         # AdwOverlaySplitView coordinating the two bars, hide them here so they
         # aren't duplicated at the pane boundary.
         header.set_show_end_title_buttons(False)
-        header.set_title_widget(Adw.WindowTitle(title="Sessions"))
+        header.set_title_widget(Adw.WindowTitle(title=_("Sessions")))
 
         self.select_btn = Gtk.ToggleButton(icon_name="object-select-symbolic")
-        self.select_btn.set_tooltip_text("Select sessions")
+        self.select_btn.set_tooltip_text(_("Select sessions"))
         self.select_btn.connect("toggled", lambda b: self._set_selection_mode(b.get_active()))
         header.pack_start(self.select_btn)
 
         menu = Gio.Menu()
-        menu.append("Show hidden sessions", "win.show-hidden")
-        menu.append("MCP servers", "win.mcp-servers")
-        menu.append("Preferences", "win.preferences")
-        menu.append("About Claude Session Manager", "win.about")
+        menu.append(_("Show hidden sessions"), "win.show-hidden")
+        menu.append(_("MCP servers"), "win.mcp-servers")
+        menu.append(_("Preferences"), "win.preferences")
+        menu.append(_("About Claude Session Manager"), "win.about")
         header.pack_end(Gtk.MenuButton(icon_name="open-menu-symbolic", menu_model=menu))
 
         refresh_btn = Gtk.Button(icon_name="view-refresh-symbolic")
-        refresh_btn.set_tooltip_text("Refresh session list")
+        refresh_btn.set_tooltip_text(_("Refresh session list"))
         refresh_btn.set_action_name("win.refresh")
         header.pack_end(refresh_btn)
         self._view.add_top_bar(header)
 
         # -- search + accordion controls --------------------------------------
-        self.search_entry = Gtk.SearchEntry(placeholder_text="Search sessions…", hexpand=True)
+        self.search_entry = Gtk.SearchEntry(placeholder_text=_("Search sessions…"), hexpand=True)
         self.search_entry.connect("search-changed", lambda *_: self._invalidate())
 
         collapse_all = Gtk.Button(icon_name="pan-up-symbolic")
         collapse_all.add_css_class("flat")
-        collapse_all.set_tooltip_text("Collapse all groups")
+        collapse_all.set_tooltip_text(_("Collapse all groups"))
         collapse_all.connect("clicked", lambda *_: self._set_all_collapsed(True))
 
         expand_all = Gtk.Button(icon_name="pan-down-symbolic")
         expand_all.add_css_class("flat")
-        expand_all.set_tooltip_text("Expand all groups")
+        expand_all.set_tooltip_text(_("Expand all groups"))
         expand_all.connect("clicked", lambda *_: self._set_all_collapsed(False))
 
         search_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=2)
@@ -258,9 +259,9 @@ class SessionSidebar(Gtk.Box):
 
         empty = Adw.StatusPage(
             icon_name="folder-symbolic",
-            title="No sessions found",
-            description="Run claude in a project directory first — "
-            "sessions will appear here automatically.",
+            title=_("No sessions found"),
+            description=_("Run claude in a project directory first — "
+            "sessions will appear here automatically."),
         )
         empty.add_css_class("compact")
 
@@ -298,12 +299,12 @@ class SessionSidebar(Gtk.Box):
             1 for sid in self.store.sessions if (item := self.store.get_item(sid)) and item.status
         )
         parts = [
-            f"{len(sessions)} sessions",
-            f"{len(projects)} projects",
+            _("{n} sessions").format(n=len(sessions)),
+            _("{n} projects").format(n=len(projects)),
             format_size(sum(s.size for s in sessions)),
         ]
         if open_tabs:
-            parts.append(f"{open_tabs} open")
+            parts.append(_("{n} open").format(n=open_tabs))
         self.footer.set_label(" · ".join(parts))
 
     def _rebuild_rows(self) -> None:
@@ -329,7 +330,7 @@ class SessionSidebar(Gtk.Box):
             if item.group_key != previous_group:
                 header = GroupHeaderRow(
                     item.group_key,
-                    "Favorites" if item.group_key == FAV_GROUP else item.group_label,
+                    _("Favorites") if item.group_key == FAV_GROUP else item.group_label,
                     self.store.group_counts.get(item.group_key, 0),
                     item.group_key in self._collapsed,
                 )
@@ -409,26 +410,26 @@ class SessionSidebar(Gtk.Box):
             return menu_item
 
         open_section = Gio.Menu()
-        open_section.append_item(item("Open", "open-session"))
+        open_section.append_item(item(_("Open"), "open-session"))
         if _GHOSTTY:
-            open_section.append_item(item("Open in Ghostty", "open-ghostty"))
-        open_section.append_item(item("Fork session", "fork-session"))
+            open_section.append_item(item(_("Open in Ghostty"), "open-ghostty"))
+        open_section.append_item(item(_("Fork session"), "fork-session"))
 
         edit_section = Gio.Menu()
-        edit_section.append_item(item("Rename…", "rename-session"))
+        edit_section.append_item(item(_("Rename…"), "rename-session"))
         fav_label = (
-            "Remove from favorites" if self.store.state.is_favorite(session_id) else "Add to favorites"
+            _("Remove from favorites") if self.store.state.is_favorite(session_id) else _("Add to favorites")
         )
         edit_section.append_item(item(fav_label, "toggle-favorite"))
-        edit_section.append_item(item("Details…", "session-details"))
-        edit_section.append_item(item("Copy session ID", "copy-session-id"))
-        edit_section.append_item(item("Export as Markdown…", "export-session"))
-        edit_section.append_item(item("Reveal transcript", "reveal-transcript"))
+        edit_section.append_item(item(_("Details…"), "session-details"))
+        edit_section.append_item(item(_("Copy session ID"), "copy-session-id"))
+        edit_section.append_item(item(_("Export as Markdown…"), "export-session"))
+        edit_section.append_item(item(_("Reveal transcript"), "reveal-transcript"))
 
         danger_section = Gio.Menu()
-        hide_label = "Unhide session" if self.store.state.is_hidden(session_id) else "Hide session"
+        hide_label = _("Unhide session") if self.store.state.is_hidden(session_id) else _("Hide session")
         danger_section.append_item(item(hide_label, "hide-session"))
-        danger_section.append_item(item("Move transcript to trash…", "trash-session"))
+        danger_section.append_item(item(_("Move transcript to trash…"), "trash-session"))
 
         menu = Gio.Menu()
         menu.append_section(None, open_section)
@@ -454,24 +455,24 @@ class SessionSidebar(Gtk.Box):
         self.sel_label.add_css_class("dim-label")
         self.action_bar.pack_start(self.sel_label)
 
-        all_btn = Gtk.Button(label="All")
+        all_btn = Gtk.Button(label=_("All"))
         all_btn.add_css_class("flat")
-        all_btn.set_tooltip_text("Select all (filtered) sessions")
+        all_btn.set_tooltip_text(_("Select all (filtered) sessions"))
         all_btn.connect("clicked", lambda *_: self._select_all(True))
         self.action_bar.pack_start(all_btn)
 
-        none_btn = Gtk.Button(label="None")
+        none_btn = Gtk.Button(label=_("None"))
         none_btn.add_css_class("flat")
-        none_btn.set_tooltip_text("Clear selection")
+        none_btn.set_tooltip_text(_("Clear selection"))
         none_btn.connect("clicked", lambda *_: self._select_all(False))
         self.action_bar.pack_start(none_btn)
 
         for icon, tooltip, callback in (
-            ("user-trash-symbolic", "Move selected transcripts to trash…", self._bulk_trash),
-            ("view-conceal-symbolic", "Hide selected", self._bulk_hide),
-            ("non-starred-symbolic", "Remove selected from favorites", lambda: self._bulk_favorite(False)),
-            ("starred-symbolic", "Add selected to favorites", lambda: self._bulk_favorite(True)),
-            ("tab-new-symbolic", "Open selected in tabs", self._bulk_open),
+            ("user-trash-symbolic", _("Move selected transcripts to trash…"), self._bulk_trash),
+            ("view-conceal-symbolic", _("Hide selected"), self._bulk_hide),
+            ("non-starred-symbolic", _("Remove selected from favorites"), lambda: self._bulk_favorite(False)),
+            ("starred-symbolic", _("Add selected to favorites"), lambda: self._bulk_favorite(True)),
+            ("tab-new-symbolic", _("Open selected in tabs"), self._bulk_open),
         ):
             button = Gtk.Button(icon_name=icon)
             button.add_css_class("flat")

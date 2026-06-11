@@ -103,5 +103,9 @@ class App(Adw.Application):
 
 
 def main() -> int:
+    from . import i18n
+    from .state import AppState
+
+    i18n.init(AppState().get_setting("language"))
     app = App()
     return app.run(sys.argv)
