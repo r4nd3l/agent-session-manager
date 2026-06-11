@@ -1,17 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <component type="desktop-application">
-  <id>io.github.r4nd3l.ClaudeSessionManager</id>
+  <id>io.github.r4nd3l.AgentSessionManager</id>
   <metadata_license>CC0-1.0</metadata_license>
   <project_license>GPL-3.0-or-later</project_license>
 
-  <name>Claude Session Manager</name>
-  <summary>Manage and resume Claude Code sessions</summary>
+  <name>Agent Session Manager</name>
+  <summary>Manage and resume your AI coding agent sessions</summary>
 
   <description>
     <p>
-      A native desktop companion for the Claude Code CLI. Browse every Claude Code
-      session on your machine in a sidebar grouped by project, give sessions custom
-      names, star favorites, and resume any of them in embedded terminal tabs.
+      A native desktop companion for AI coding-agent CLIs such as Claude Code and
+      Cursor. Browse every session on your machine in a sidebar grouped by project,
+      give sessions custom names, star favorites, and resume any of them in embedded
+      terminal tabs.
     </p>
     <p>Features:</p>
     <ul>
@@ -23,11 +24,11 @@
     </ul>
     <p>
       Unofficial community tool — not affiliated with or endorsed by Anthropic.
-      Claude Code's own data is never modified.
+      The agents' own session data is never modified.
     </p>
   </description>
 
-  <launchable type="desktop-id">io.github.r4nd3l.ClaudeSessionManager.desktop</launchable>
+  <launchable type="desktop-id">io.github.r4nd3l.AgentSessionManager.desktop</launchable>
 
   <developer id="io.github.r4nd3l">
     <name>Máté Molnár</name>

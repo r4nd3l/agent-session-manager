@@ -42,8 +42,21 @@ def test_corrupt_state_file_recovers(app_state):
     assert fresh.get_name("sid") is None
 
 
+def test_migrates_old_config_dir(app_state):
+    # state.json in the pre-rebrand dir is carried over to the new dir.
+    app_state._OLD_CONFIG_DIR.mkdir(parents=True, exist_ok=True)
+    (app_state._OLD_CONFIG_DIR / "state.json").write_text(
+        json.dumps({"names": {"sid": "Carried over"}, "favorites": ["sid"]}),
+        encoding="utf-8",
+    )
+    state = app_state.AppState()
+    assert state.get_name("sid") == "Carried over"
+    assert state.is_favorite("sid")
+    assert app_state._STATE_FILE.exists()  # copied into the new location
+
+
 def test_migrates_legacy_names_file(app_state):
-    app_state._CONFIG_DIR.mkdir(parents=True, exist_ok=True)
+    app_state._LEGACY_NAMES_FILE.parent.mkdir(parents=True, exist_ok=True)
     app_state._LEGACY_NAMES_FILE.write_text(json.dumps({"old-sid": "Old name"}), encoding="utf-8")
     state = app_state.AppState()
     assert state.get_name("old-sid") == "Old name"

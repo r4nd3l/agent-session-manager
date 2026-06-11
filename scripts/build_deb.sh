@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# Build a Debian package: dist/claude-session-manager_<version>_all.deb
+# Build a Debian package: dist/agent-session-manager_<version>_all.deb
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-PKG="claude-session-manager"
-APP_ID="io.github.r4nd3l.ClaudeSessionManager"
+PKG="agent-session-manager"
+APP_ID="io.github.r4nd3l.AgentSessionManager"
 VERSION="$(grep -m1 '^version' "$ROOT/pyproject.toml" | cut -d'"' -f2)"
 BUILD="$ROOT/dist/deb-build"
 
@@ -59,12 +59,12 @@ Depends: python3 (>= 3.10), python3-gi, gir1.2-gtk-4.0, gir1.2-adw-1, gir1.2-vte
 Recommends: gir1.2-glib-2.0
 Installed-Size: $INSTALLED_SIZE
 Maintainer: Máté Molnár <molnar.mate@zengo.eu>
-Homepage: https://github.com/r4nd3l/claude-session-manager
-Description: Manage and resume Claude Code sessions (GTK4 GUI)
- Native GTK4/libadwaita desktop app for the Claude Code CLI: browse all
- sessions grouped by project, name and star them, and resume any session
- in embedded terminal tabs. Unofficial community tool; Claude Code's own
- data is never modified.
+Homepage: https://github.com/r4nd3l/agent-session-manager
+Description: Manage and resume AI coding agent sessions (GTK4 GUI)
+ Native GTK4/libadwaita desktop app for AI coding-agent CLIs such as Claude
+ Code and Cursor: browse all sessions grouped by project, name and star them,
+ and resume any session in embedded terminal tabs. Unofficial community tool;
+ the agents' own session data is never modified.
 EOF
 
 dpkg-deb --build --root-owner-group "$BUILD" "$ROOT/dist/${PKG}_${VERSION}_all.deb"

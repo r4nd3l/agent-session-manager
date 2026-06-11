@@ -1,7 +1,7 @@
 [project]
-# PyPI distribution name ("claude-session-manager" is taken by an unrelated CLI
-# tool). The import package and the installed command stay claude-session-manager.
-name = "claude-session-manager-gtk"
+# PyPI distribution name ("agent-session-manager" is taken by an unrelated CLI
+# tool). The import package and the installed command stay agent-session-manager.
+name = "agent-session-manager-gtk"
 version = "0.8.0"
 description = "Native GTK4 GUI to manage and resume Claude Code sessions"
 readme = "README.md"
@@ -21,11 +21,11 @@ classifiers = [
 dependencies = []
 
 [project.urls]
-Homepage = "https://github.com/r4nd3l/claude-session-manager"
-Issues = "https://github.com/r4nd3l/claude-session-manager/issues"
+Homepage = "https://github.com/r4nd3l/agent-session-manager"
+Issues = "https://github.com/r4nd3l/agent-session-manager/issues"
 
 [project.scripts]
-claude-session-manager = "claude_session_manager.app:main"
+agent-session-manager = "claude_session_manager.app:main"
 
 [build-system]
 requires = ["setuptools>=68"]

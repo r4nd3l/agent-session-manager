@@ -51,8 +51,8 @@ def _status_icon(status: str) -> Gio.Icon | None:
 class MainWindow(Adw.ApplicationWindow):
     def __init__(self, state: AppState, store: SessionStore, **kwargs) -> None:
         super().__init__(**kwargs)
-        self.set_title("Claude Session Manager")
-        self.set_icon_name("io.github.r4nd3l.ClaudeSessionManager")
+        self.set_title("Agent Session Manager")
+        self.set_icon_name("io.github.r4nd3l.AgentSessionManager")
         self.set_default_size(1280, 800)
 
         self.state = state
@@ -666,17 +666,17 @@ class MainWindow(Adw.ApplicationWindow):
 
     def _show_about(self) -> None:
         about = Adw.AboutDialog(
-            application_name="Claude Session Manager",
-            application_icon="io.github.r4nd3l.ClaudeSessionManager",
+            application_name="Agent Session Manager",
+            application_icon="io.github.r4nd3l.AgentSessionManager",
             developer_name="Máté Molnár",
             version=__version__,
             license_type=Gtk.License.GPL_3_0,
             comments=(
-                _("Manage and resume Claude Code sessions.\n\n"
+                _("Manage and resume your AI coding agent sessions.\n\n"
                 "Unofficial community tool — not affiliated with or endorsed by Anthropic.")
             ),
-            website="https://github.com/r4nd3l/claude-session-manager",
-            issue_url="https://github.com/r4nd3l/claude-session-manager/issues",
+            website="https://github.com/r4nd3l/agent-session-manager",
+            issue_url="https://github.com/r4nd3l/agent-session-manager/issues",
         )
         about.present(self)
 

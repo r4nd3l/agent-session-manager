@@ -84,7 +84,9 @@ def app_state(tmp_path, monkeypatch):
     import claude_session_manager.state as state_mod
 
     config_dir = tmp_path / "config"
+    old_dir = tmp_path / "old_config"  # isolated; pre-rebrand location
     monkeypatch.setattr(state_mod, "_CONFIG_DIR", config_dir)
+    monkeypatch.setattr(state_mod, "_OLD_CONFIG_DIR", old_dir)
     monkeypatch.setattr(state_mod, "_STATE_FILE", config_dir / "state.json")
-    monkeypatch.setattr(state_mod, "_LEGACY_NAMES_FILE", config_dir / "names.json")
+    monkeypatch.setattr(state_mod, "_LEGACY_NAMES_FILE", old_dir / "names.json")
     return state_mod

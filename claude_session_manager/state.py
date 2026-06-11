@@ -1,20 +1,31 @@
 """Persistent app state: custom names, favorites, hidden sessions, settings.
 
-Everything lives in our own config file — Claude's session data under
-~/.claude is never modified.
+Everything lives in our own config file — the agents' session data is never
+modified.
 """
 
 from __future__ import annotations
 
 import json
 import os
+import shutil
 from pathlib import Path
 
-_CONFIG_DIR = Path(
-    os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config")
-) / "claude-session-manager"
+_CONFIG_BASE = Path(os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config"))
+_CONFIG_DIR = _CONFIG_BASE / "agent-session-manager"
+_OLD_CONFIG_DIR = _CONFIG_BASE / "claude-session-manager"  # pre-rebrand location
 _STATE_FILE = _CONFIG_DIR / "state.json"
-_LEGACY_NAMES_FILE = _CONFIG_DIR / "names.json"
+_LEGACY_NAMES_FILE = _OLD_CONFIG_DIR / "names.json"
+
+
+def _migrate_old_config() -> None:
+    """One-time: carry settings/names over from the old config dir name."""
+    if _STATE_FILE.exists() or not _OLD_CONFIG_DIR.is_dir():
+        return
+    _CONFIG_DIR.mkdir(parents=True, exist_ok=True)
+    old_state = _OLD_CONFIG_DIR / "state.json"
+    if old_state.exists():
+        shutil.copy2(old_state, _STATE_FILE)
 
 DEFAULT_SETTINGS = {
     "font": "",  # empty = VTE default
@@ -40,6 +51,7 @@ class AppState:
     # -- persistence ---------------------------------------------------
 
     def _load(self) -> None:
+        _migrate_old_config()
         data: dict = {}
         try:
             data = json.loads(_STATE_FILE.read_text(encoding="utf-8"))

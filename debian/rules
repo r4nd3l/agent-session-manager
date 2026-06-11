@@ -4,16 +4,16 @@ export PYBUILD_NAME=claude_session_manager
 %:
 	dh $@ --with python3 --buildsystem=pybuild
 
-# The wheel ships the package + the claude-session-manager command. The desktop
+# The wheel ships the package + the agent-session-manager command. The desktop
 # entry, icons, and metainfo are not in the wheel, so install them here.
 execute_after_dh_install:
-	install -Dm644 data/io.github.r4nd3l.ClaudeSessionManager.metainfo.xml \
-	  debian/claude-session-manager/usr/share/metainfo/io.github.r4nd3l.ClaudeSessionManager.metainfo.xml
-	install -Dm644 data/icons/io.github.r4nd3l.ClaudeSessionManager.svg \
-	  debian/claude-session-manager/usr/share/icons/hicolor/scalable/apps/io.github.r4nd3l.ClaudeSessionManager.svg
+	install -Dm644 data/io.github.r4nd3l.AgentSessionManager.metainfo.xml \
+	  debian/agent-session-manager/usr/share/metainfo/io.github.r4nd3l.AgentSessionManager.metainfo.xml
+	install -Dm644 data/icons/io.github.r4nd3l.AgentSessionManager.svg \
+	  debian/agent-session-manager/usr/share/icons/hicolor/scalable/apps/io.github.r4nd3l.AgentSessionManager.svg
 	install -Dm644 data/icons/hicolor/scalable/actions/tab-close-symbolic.svg \
-	  debian/claude-session-manager/usr/share/icons/hicolor/scalable/actions/tab-close-symbolic.svg
-	install -d debian/claude-session-manager/usr/share/applications
-	sed -e 's|^Exec=.*|Exec=claude-session-manager|' -e '/^Path=/d' \
-	  data/io.github.r4nd3l.ClaudeSessionManager.desktop \
-	  > debian/claude-session-manager/usr/share/applications/io.github.r4nd3l.ClaudeSessionManager.desktop
+	  debian/agent-session-manager/usr/share/icons/hicolor/scalable/actions/tab-close-symbolic.svg
+	install -d debian/agent-session-manager/usr/share/applications
+	sed -e 's|^Exec=.*|Exec=agent-session-manager|' -e '/^Path=/d' \
+	  data/io.github.r4nd3l.AgentSessionManager.desktop \
+	  > debian/agent-session-manager/usr/share/applications/io.github.r4nd3l.AgentSessionManager.desktop
