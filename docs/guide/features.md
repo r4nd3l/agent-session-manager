@@ -16,6 +16,7 @@
   background.
 - **Waiting badge** — an amber **?** marks sessions where Claude's last message
   was a question awaiting your reply, so you can spot what needs you at a glance.
+- **Interrupted badge** — a red stop icon marks sessions you stopped mid-task.
 
 ![Sidebar with the Favorites section expanded](/img/sidebar-favorites.png)
 
@@ -85,9 +86,18 @@ Code's own session files are never modified.
 - **Open in [Ghostty](https://ghostty.org)** to resume a session in an external
   Ghostty window instead of an embedded tab.
 
+## Multiple windows
+
+Open additional windows from the New Session button's menu or with
+`Ctrl+Shift+N`. Windows share one session list and state, so favorites, names,
+and live updates stay consistent across them.
+
 ## Preferences
 
 Terminal **font**, **scrollback** size, **color scheme** (system / light /
-dark), and the idle-notification toggle — reachable from the menu or `Ctrl+,`.
+dark), a **terminal color theme** (Dracula, Solarized, Gruvbox, Nord,
+Catppuccin, Tokyo Night, Monokai, One Dark…), the **language** (English,
+Magyar, Deutsch, Español, Français), and the idle-notification toggle —
+reachable from the menu or `Ctrl+,`.
 
 ![Preferences dialog](/img/preferences.png)

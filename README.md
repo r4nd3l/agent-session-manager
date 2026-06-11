@@ -82,7 +82,7 @@ sudo apt update && sudo apt install claude-session-manager
 **Debian/Ubuntu — .deb package** (from the [latest release](https://github.com/r4nd3l/claude-session-manager/releases/latest)):
 
 ```bash
-sudo apt install ./claude-session-manager_0.7.0_all.deb
+sudo apt install ./claude-session-manager_0.8.0_all.deb
 ```
 
 Dependencies are pulled in automatically; the app appears in your app grid as "Claude Session Manager".

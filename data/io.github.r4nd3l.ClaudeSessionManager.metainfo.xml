@@ -40,6 +40,18 @@
   <content_rating type="oars-1.1"/>
 
   <releases>
+    <release version="0.8.0" date="2026-06-11">
+      <description>
+        <p>Distribution and localization.</p>
+        <ul>
+          <li>UI translations: Hungarian, German, Spanish, French</li>
+          <li>Selectable terminal color themes</li>
+          <li>Multiple windows</li>
+          <li>Interrupted-session badge</li>
+          <li>AUR and Ubuntu PPA packages</li>
+        </ul>
+      </description>
+    </release>
     <release version="0.7.0" date="2026-06-10">
       <description>
         <p>Insight, export, and packaging.</p>

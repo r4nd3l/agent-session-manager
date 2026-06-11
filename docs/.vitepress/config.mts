@@ -23,7 +23,7 @@ export default defineConfig({
     // https://vitepress.dev/reference/default-theme-config
     nav: [
       { text: 'Guide', link: '/guide/introduction' },
-      { text: 'Releases', link: 'https://github.com/r4nd3l/claude-session-manager/releases' },
+      { text: 'Releases & Roadmap', link: '/releases' },
     ],
 
     sidebar: {
