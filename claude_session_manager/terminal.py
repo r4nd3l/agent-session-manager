@@ -13,6 +13,8 @@ gi.require_version("Gtk", "4.0")
 gi.require_version("Vte", "3.91")
 from gi.repository import Gdk, GLib, GObject, Gtk, Pango, Vte  # noqa: E402
 
+from . import themes  # noqa: E402
+
 # PCRE2 flags for the find bar: multiline, case-insensitive.
 _PCRE2_CASELESS = 0x00000008
 _PCRE2_MULTILINE = 0x00000400
@@ -203,6 +205,7 @@ class TerminalTab(Gtk.Box):
             self.terminal.set_scrollback_lines(int(settings.get("scrollback") or 10_000))
         except (TypeError, ValueError):
             pass
+        themes.apply_terminal_theme(self.terminal, settings.get("terminal_theme"))
 
     def feed_message(self, text: str) -> None:
         self.terminal.feed(f"\r\n\x1b[1;33m[session manager]\x1b[0m {text}\r\n".encode())

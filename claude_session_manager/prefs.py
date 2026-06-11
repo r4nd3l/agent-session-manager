@@ -11,6 +11,7 @@ gi.require_version("Adw", "1")
 from gi.repository import Adw, Gtk, Pango  # noqa: E402
 
 from .state import AppState
+from .themes import DEFAULT_THEME, THEME_NAMES
 
 _SCHEMES = [
     ("system", "Follow system", Adw.ColorScheme.DEFAULT),
@@ -59,6 +60,15 @@ class PreferencesDialog(Adw.PreferencesDialog):
         scroll_row.set_value(int(state.get_setting("scrollback") or 10_000))
         scroll_row.connect("notify::value", self._on_scrollback_changed)
         terminal_group.add(scroll_row)
+
+        self._theme_row = Adw.ComboRow(title="Color theme")
+        self._theme_row.set_model(Gtk.StringList.new(THEME_NAMES))
+        current_theme = state.get_setting("terminal_theme") or DEFAULT_THEME
+        self._theme_row.set_selected(
+            THEME_NAMES.index(current_theme) if current_theme in THEME_NAMES else 0
+        )
+        self._theme_row.connect("notify::selected", self._on_theme_changed)
+        terminal_group.add(self._theme_row)
         page.add(terminal_group)
 
         appearance_group = Adw.PreferencesGroup(title="Appearance")
@@ -96,6 +106,10 @@ class PreferencesDialog(Adw.PreferencesDialog):
 
     def _on_scrollback_changed(self, row: Adw.SpinRow, _pspec) -> None:
         self._state.set_setting("scrollback", int(row.get_value()))
+        self._on_change()
+
+    def _on_theme_changed(self, row: Adw.ComboRow, _pspec) -> None:
+        self._state.set_setting("terminal_theme", THEME_NAMES[row.get_selected()])
         self._on_change()
 
     def _on_scheme_changed(self, row: Adw.ComboRow, _pspec) -> None:
