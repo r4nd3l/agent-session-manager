@@ -11,7 +11,7 @@ makedepends=('python-build' 'python-installer' 'python-wheel' 'python-setuptools
 optdepends=('claude-code: resume Claude Code sessions'
             'cursor-agent: resume Cursor sessions')
 source=("$pkgname-$pkgver.tar.gz::$url/archive/refs/tags/v$pkgver.tar.gz")
-sha256sums=('a5ed6aaeb91bdeb2b9bb3051572d14e79d5d7f8a84dc1d40044e1258462e8920')
+sha256sums=('b3e8c75b51c2457ba701493caf3d5187d3a05397cd6761e0939f9c975d598ec1')
 
 build() {
   cd "agent-session-manager-$pkgver"
