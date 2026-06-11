@@ -11,3 +11,12 @@ build/
 node_modules/
 docs/.vitepress/dist/
 docs/.vitepress/cache/
+
+# Debian build artifacts
+.pybuild/
+debian/.debhelper/
+debian/claude-session-manager/
+debian/files
+debian/debhelper-build-stamp
+debian/*.substvars
+debian/*.log
