@@ -9,9 +9,9 @@ from pathlib import Path
 
 import gi
 
-gi.require_version("Gtk", "4.0")
-gi.require_version("Adw", "1")
-from gi.repository import Adw, Gio, GLib, GObject, Gtk  # noqa: E402
+gi.require_version("Gdk", "3.0")
+gi.require_version("Gtk", "3.0")
+from gi.repository import Gdk, Gio, GLib, GObject, Gtk  # noqa: E402
 
 from . import __version__, dialogs
 from .i18n import _
@@ -26,30 +26,26 @@ from .switcher import QuickSwitcher
 from .terminal import TerminalTab
 
 _GHOSTTY = shutil.which("ghostty")
-
-# Quiet period before a background tab is considered "idle" / finished.
 _IDLE_NOTIFY_MS = 4000
 
-# Tab status dots, matching the sidebar (.status-dot CSS in app.py).
-_STATUS_COLORS = {"open": "#2ec27e", "attention": "#3584e4"}
-_status_icon_cache: dict[str, Gio.Icon] = {}
+
+def _make_tab_label(title: str, on_close) -> Gtk.Box:
+    """Build a notebook tab label with a close button."""
+    box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=4)
+    label = Gtk.Label(label=title)
+    label.set_ellipsize(3)  # Pango.EllipsizeMode.END
+    label.set_max_width_chars(20)
+    box.pack_start(label, True, True, 0)
+    close_btn = Gtk.Button.new_from_icon_name("window-close-symbolic", Gtk.IconSize.MENU)
+    close_btn.get_style_context().add_class("flat")
+    close_btn.set_relief(Gtk.ReliefStyle.NONE)
+    close_btn.connect("clicked", on_close)
+    box.pack_start(close_btn, False, False, 0)
+    box.show_all()
+    return box
 
 
-def _status_icon(status: str) -> Gio.Icon | None:
-    if status not in _STATUS_COLORS:
-        return None
-    icon = _status_icon_cache.get(status)
-    if icon is None:
-        svg = (
-            '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16">'
-            f'<circle cx="8" cy="8" r="4" fill="{_STATUS_COLORS[status]}"/></svg>'
-        ).encode()
-        icon = Gio.BytesIcon.new(GLib.Bytes.new(svg))
-        _status_icon_cache[status] = icon
-    return icon
-
-
-class MainWindow(Adw.ApplicationWindow):
+class MainWindow(Gtk.ApplicationWindow):
     def __init__(self, state: AppState, store: SessionStore, **kwargs) -> None:
         super().__init__(**kwargs)
         self.set_title("Agent Session Manager")
@@ -58,74 +54,108 @@ class MainWindow(Adw.ApplicationWindow):
 
         self.state = state
         self.store = store
-        self._pages: dict[str, Adw.TabPage] = {}  # session_id -> open tab
-        self._confirmed_closes: set[Adw.TabPage] = set()
-        self._closing_pages: dict[Adw.TabPage, int] = {}  # graceful close in progress -> attempts
-        self._menu_page: Adw.TabPage | None = None
-        self._base_titles: dict[Adw.TabPage, str] = {}  # fork/new tab title without emoji
-        self._idle_sources: dict[Adw.TabPage, int] = {}  # pending idle-notify timers
+        self._tabs: dict[str, TerminalTab] = {}  # session_id -> open tab
+        self._confirmed_closes: set[TerminalTab] = set()
+        self._closing_tabs: dict[TerminalTab, int] = {}
+        self._tab_titles: dict[TerminalTab, str] = {}
+        self._base_titles: dict[TerminalTab, str] = {}
+        self._needs_attention: set[TerminalTab] = set()
+        self._idle_sources: dict[TerminalTab, int] = {}
         self._switcher: QuickSwitcher | None = None
 
         self._install_actions()
-        self._install_shortcuts()
 
-        # --- content pane: header + tab bar + tab view ---
-        self.tab_view = Adw.TabView()
-        self.tab_view.connect("close-page", self._on_close_page)
-        self.tab_view.connect("notify::selected-page", self._on_selected_page_changed)
-        self.tab_view.connect("setup-menu", self._on_tab_setup_menu)
+        # --- content pane: header + notebook ---
+        self.notebook = Gtk.Notebook()
+        self.notebook.set_scrollable(True)
+        self.notebook.set_show_tabs(True)
+        self.notebook.connect("switch-page", self._on_page_switched)
 
-        tab_menu = Gio.Menu()
-        tab_menu.append(_("Rename…"), "win.rename-tab")
-        tab_menu.append(_("Set emoji…"), "win.set-tab-emoji")
-        tab_menu.append(_("Copy session ID"), "win.copy-tab-session-id")
-        tab_menu.append(_("Close"), "win.close-menu-tab")
-        self.tab_view.set_menu_model(tab_menu)
+        content_header = Gtk.HeaderBar()
+        content_header.set_show_close_button(True)
+        content_header.set_title("")
+        content_header.set_has_subtitle(False)
 
-        tab_bar = Adw.TabBar(view=self.tab_view)
-        tab_bar.set_autohide(False)
-
-        content_header = Adw.HeaderBar()
-        self.sidebar_toggle = Gtk.ToggleButton(icon_name="sidebar-show-symbolic", active=True)
+        self.sidebar_toggle = Gtk.ToggleButton()
+        self.sidebar_toggle.set_image(Gtk.Image.new_from_icon_name("view-sidebar-symbolic", Gtk.IconSize.BUTTON))
+        self.sidebar_toggle.get_style_context().add_class("flat")
+        self.sidebar_toggle.set_active(True)
         self.sidebar_toggle.set_tooltip_text(_("Toggle sidebar (F9)"))
         content_header.pack_start(self.sidebar_toggle)
 
-        new_menu = Gio.Menu()
-        for provider in available_providers():
-            new_menu.append(
-                _("New {name} session…").format(name=provider.name),
-                f"win.new-session-provider::{provider.id}",
-            )
-        new_menu.append(_("New window"), "app.new-window")
-        new_btn = Adw.SplitButton(icon_name="tab-new-symbolic")
+        new_btn = Gtk.Button.new_from_icon_name("tab-new-symbolic", Gtk.IconSize.BUTTON)
         new_btn.set_tooltip_text(_("New session (Ctrl+Shift+T)"))
-        new_btn.set_menu_model(new_menu)
+        new_btn.get_style_context().add_class("flat")
+        new_btn.get_style_context().add_class("cc-accent-btn")
         new_btn.connect("clicked", lambda *_: self._new_session())
         content_header.pack_start(new_btn)
 
-        self.close_all_btn = Gtk.Button(icon_name="tab-close-symbolic", visible=False)
+        self.close_all_btn = Gtk.Button.new_from_icon_name("edit-clear-all-symbolic", Gtk.IconSize.BUTTON)
+        self.close_all_btn.get_style_context().add_class("flat")
         self.close_all_btn.set_tooltip_text(_("Close all tabs"))
+        self.close_all_btn.set_no_show_all(True)
+        self.close_all_btn.set_visible(False)
         self.close_all_btn.connect("clicked", lambda *_: self._close_all_tabs())
         content_header.pack_start(self.close_all_btn)
-        self.tab_view.connect(
-            "notify::n-pages",
-            lambda *_: self.close_all_btn.set_visible(self.tab_view.get_n_pages() > 1),
-        )
 
-        placeholder = Adw.StatusPage(
-            icon_name="utilities-terminal-symbolic",
-            title=_("No session open"),
-            description=_("Pick a session from the sidebar, or start a new one."),
+        self.set_titlebar(content_header)
+
+        # Placeholder when no tabs
+        self._placeholder = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
+        self._placeholder.set_valign(Gtk.Align.CENTER)
+        self._placeholder.set_halign(Gtk.Align.CENTER)
+
+        logo_text = (
+            "     _    ____  __  __\n"
+            "    / \\  / ___||  \\/  |\n"
+            "   / _ \\ \\___ \\| |\\/| |\n"
+            "  / ___ \\ ___) | |  | |\n"
+            " /_/   \\_\\____/|_|  |_|\n"
         )
+        logo = Gtk.Label(label=logo_text)
+        logo.get_style_context().add_class("cc-logo-art")
+        self._placeholder.pack_start(logo, False, False, 0)
+
+        ph_title = Gtk.Label(label=_("No session open"))
+        ph_title.get_style_context().add_class("cc-placeholder-title")
+        ph_title.set_margin_top(8)
+        self._placeholder.pack_start(ph_title, False, False, 0)
+
+        ph_desc = Gtk.Label(label=_("Pick a session from the sidebar, or start a new one."))
+        ph_desc.get_style_context().add_class("cc-placeholder-desc")
+        self._placeholder.pack_start(ph_desc, False, False, 0)
+
+        shortcuts_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
+        shortcuts_box.set_margin_top(24)
+        for keys, desc in [
+            (["Ctrl", "Shift", "T"], _("New session")),
+            (["Ctrl", "Shift", "K"], _("Quick switch")),
+            (["Ctrl", ","], _("Preferences")),
+            (["F9"], _("Toggle sidebar")),
+        ]:
+            row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+            row.set_halign(Gtk.Align.CENTER)
+            key_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=3)
+            key_box.set_size_request(180, -1)
+            key_box.set_halign(Gtk.Align.END)
+            for k in keys:
+                kbd = Gtk.Label(label=k)
+                kbd.get_style_context().add_class("cc-kbd")
+                key_box.pack_start(kbd, False, False, 0)
+            row.pack_start(key_box, False, False, 0)
+            desc_label = Gtk.Label(label=desc, xalign=0.0)
+            desc_label.get_style_context().add_class("cc-placeholder-desc")
+            desc_label.set_size_request(140, -1)
+            row.pack_start(desc_label, False, False, 0)
+            shortcuts_box.pack_start(row, False, False, 0)
+        self._placeholder.pack_start(shortcuts_box, False, False, 0)
 
         self.content_stack = Gtk.Stack()
-        self.content_stack.add_named(placeholder, "empty")
-        self.content_stack.add_named(self.tab_view, "tabs")
+        self.content_stack.add_named(self._placeholder, "empty")
+        self.content_stack.add_named(self.notebook, "tabs")
 
-        content_view = Adw.ToolbarView()
-        content_view.add_top_bar(content_header)
-        content_view.add_top_bar(tab_bar)
-        content_view.set_content(self.content_stack)
+        content_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+        content_box.pack_start(self.content_stack, True, True, 0)
 
         # --- sidebar ---
         self.sidebar = SessionSidebar(self.store)
@@ -133,33 +163,27 @@ class MainWindow(Adw.ApplicationWindow):
         self.sidebar.connect("open-many", self._on_sidebar_open_many)
         self.sidebar.connect("trash-many", self._on_sidebar_trash_many)
 
-        self.sidebar.set_size_request(220, -1)  # minimum drag width
+        self.sidebar.set_size_request(220, -1)
         self.split = Gtk.Paned(orientation=Gtk.Orientation.HORIZONTAL)
-        self.split.set_start_child(self.sidebar)
-        self.split.set_end_child(content_view)
-        self.split.set_resize_start_child(False)  # window resize grows the content, not the sidebar
-        self.split.set_shrink_start_child(False)
+        self.split.pack1(self.sidebar, resize=False, shrink=False)
+        self.split.pack2(content_box, resize=True, shrink=False)
         self.split.set_position(int(self.state.get_setting("sidebar_width")))
         self.split.connect("notify::position", self._schedule_save_sidebar_width)
-        self.set_content(self.split)
+        self.add(self.split)
 
-        # Toggle button reflects (and controls) sidebar visibility.
         self._sidebar_width_save_source: int | None = None
-        self.sidebar.bind_property(
-            "visible",
-            self.sidebar_toggle,
-            "active",
-            GObject.BindingFlags.BIDIRECTIONAL | GObject.BindingFlags.SYNC_CREATE,
-        )
         self.sidebar_toggle.connect(
             "toggled", lambda b: self.sidebar.set_visible(b.get_active())
         )
+
+        # Keyboard shortcuts
+        self.connect("key-press-event", self._on_key_press)
 
     # -- sidebar width persistence -------------------------------------------
 
     def _schedule_save_sidebar_width(self, *_args) -> None:
         if not self.sidebar.get_visible():
-            return  # don't persist the collapsed position
+            return
         if self._sidebar_width_save_source is not None:
             GLib.source_remove(self._sidebar_width_save_source)
         self._sidebar_width_save_source = GLib.timeout_add(600, self._save_sidebar_width)
@@ -171,6 +195,42 @@ class MainWindow(Adw.ApplicationWindow):
             self.state.set_setting("sidebar_width", position)
         return GLib.SOURCE_REMOVE
 
+    # -- keyboard shortcuts ---------------------------------------------------
+
+    def _on_key_press(self, _widget, event: Gdk.EventKey) -> bool:
+        state = event.state & Gtk.accelerator_get_default_mod_mask()
+        keyval = event.keyval
+        ctrl_shift = Gdk.ModifierType.CONTROL_MASK | Gdk.ModifierType.SHIFT_MASK
+
+        if state == ctrl_shift:
+            if keyval == Gdk.KEY_F:
+                self.sidebar.focus_search()
+                return True
+            if keyval == Gdk.KEY_T:
+                self._new_session()
+                return True
+            if keyval == Gdk.KEY_W:
+                self._close_current_tab()
+                return True
+            if keyval == Gdk.KEY_K:
+                self._quick_switch()
+                return True
+        if state == Gdk.ModifierType.CONTROL_MASK:
+            if keyval == Gdk.KEY_Page_Down:
+                self._next_tab()
+                return True
+            if keyval == Gdk.KEY_Page_Up:
+                self._prev_tab()
+                return True
+            if keyval == Gdk.KEY_comma:
+                self._show_preferences()
+                return True
+        if keyval == Gdk.KEY_F9 and state == 0:
+            self.sidebar.set_visible(not self.sidebar.get_visible())
+            self.sidebar_toggle.set_active(self.sidebar.get_visible())
+            return True
+        return False
+
     # -- actions / shortcuts -------------------------------------------------
 
     def _install_actions(self) -> None:
@@ -181,14 +241,10 @@ class MainWindow(Adw.ApplicationWindow):
             "mcp-servers": lambda *_: dialogs.mcp_browser_dialog(self),
             "focus-search": lambda *_: self.sidebar.focus_search(),
             "close-tab": lambda *_: self._close_current_tab(),
-            "next-tab": lambda *_: self.tab_view.select_next_page(),
-            "prev-tab": lambda *_: self.tab_view.select_previous_page(),
+            "next-tab": lambda *_: self._next_tab(),
+            "prev-tab": lambda *_: self._prev_tab(),
             "about": lambda *_: self._show_about(),
             "quick-switch": lambda *_: self._quick_switch(),
-            "rename-tab": lambda *_: self._rename_tab(),
-            "set-tab-emoji": lambda *_: self._set_tab_emoji(),
-            "copy-tab-session-id": lambda *_: self._copy_tab_session_id(),
-            "close-menu-tab": lambda *_: self._close_menu_tab(),
             "toggle-sidebar": lambda *_: self.sidebar.set_visible(
                 not self.sidebar.get_visible()
             ),
@@ -207,7 +263,7 @@ class MainWindow(Adw.ApplicationWindow):
             "open-ghostty": self._on_open_ghostty,
             "rename-session": self._on_rename_action,
             "toggle-favorite": lambda _a, p: self.store.toggle_favorite(p.get_string()),
-            "copy-session-id": lambda _a, p: self.get_clipboard().set(p.get_string()),
+            "copy-session-id": lambda _a, p: Gtk.Clipboard.get(Gdk.SELECTION_CLIPBOARD).set_text(p.get_string(), -1),
             "reveal-transcript": self._on_reveal_transcript,
             "export-session": self._on_export_session,
             "session-details": self._on_session_details,
@@ -224,26 +280,6 @@ class MainWindow(Adw.ApplicationWindow):
         )
         show_hidden.connect("change-state", self._on_show_hidden)
         self.add_action(show_hidden)
-
-    def _install_shortcuts(self) -> None:
-        controller = Gtk.ShortcutController()
-        controller.set_propagation_phase(Gtk.PropagationPhase.CAPTURE)
-        for trigger, action in (
-            ("<Control><Shift>f", "win.focus-search"),
-            ("<Control><Shift>t", "win.new-session"),
-            ("<Control><Shift>w", "win.close-tab"),
-            ("<Control>Page_Down", "win.next-tab"),
-            ("<Control>Page_Up", "win.prev-tab"),
-            ("<Control>comma", "win.preferences"),
-            ("<Control><Shift>k", "win.quick-switch"),
-            ("F9", "win.toggle-sidebar"),
-        ):
-            controller.add_shortcut(
-                Gtk.Shortcut.new(
-                    Gtk.ShortcutTrigger.parse_string(trigger), Gtk.NamedAction.new(action)
-                )
-            )
-        self.add_controller(controller)
 
     # -- sidebar signal handlers -------------------------------------------------
 
@@ -262,9 +298,9 @@ class MainWindow(Adw.ApplicationWindow):
                 if error:
                     errors.append(f"{item.display_name}: {error}")
                     continue
-                page = self._pages.get(item.session_id)
-                if page is not None:
-                    self.tab_view.close_page(page)
+                tab = self._tabs.get(item.session_id)
+                if tab is not None:
+                    self._remove_tab(tab)
             if errors:
                 dialogs.error_dialog(self, _("Some transcripts could not be trashed"), "\n".join(errors))
 
@@ -282,10 +318,12 @@ class MainWindow(Adw.ApplicationWindow):
         provider = get_provider(session.provider)
         fork = fork and provider.supports_fork
         if not fork:
-            page = self._pages.get(session.session_id)
-            if page is not None:
-                self.tab_view.set_selected_page(page)
-                return
+            tab = self._tabs.get(session.session_id)
+            if tab is not None:
+                page_num = self.notebook.page_num(tab)
+                if page_num >= 0:
+                    self.notebook.set_current_page(page_num)
+                    return
 
         tab = TerminalTab(
             cwd=session.cwd,
@@ -295,25 +333,22 @@ class MainWindow(Adw.ApplicationWindow):
             provider=provider,
         )
         title = f"{self.store.display_name(session)} (fork)" if fork else self._tab_title(session)
-        page = self._add_tab(tab, title,
-                             f"{session.project_name} — {session.session_id}")
+        self._add_tab(tab, title,
+                      f"{session.project_name} — {session.session_id}")
         if not fork:
-            self._pages[session.session_id] = page
+            self._tabs[session.session_id] = tab
             self._sync_status(session.session_id)
 
     def _tab_title(self, session: Session) -> str:
-        """Tab title with the session's saved emoji prefix (tabs only)."""
         name = self.store.display_name(session)
         emoji = self.state.get_emoji(session.session_id)
         return f"{emoji} {name}" if emoji else name
 
     def _default_provider(self):
-        """First installed agent (Claude when present), used by the quick button."""
         providers = available_providers()
         return providers[0] if providers else get_provider("claude")
 
     def _new_session(self, provider=None) -> None:
-        """Start in the remembered folder if it still exists, else ask."""
         provider = provider or self._default_provider()
         default = self.state.get_setting("new_session_dir")
         if default and Path(default).is_dir():
@@ -323,20 +358,22 @@ class MainWindow(Adw.ApplicationWindow):
 
     def _choose_new_session_folder(self, provider=None) -> None:
         self._new_session_provider = provider or self._default_provider()
-        dialog = Gtk.FileDialog(title=_("Choose project directory"))
+        dialog = Gtk.FileChooserDialog(
+            title=_("Choose project directory"),
+            parent=self,
+            action=Gtk.FileChooserAction.SELECT_FOLDER,
+        )
+        dialog.add_button(_("Cancel"), Gtk.ResponseType.CANCEL)
+        dialog.add_button(_("Open"), Gtk.ResponseType.OK)
         default = self.state.get_setting("new_session_dir")
         if default and Path(default).is_dir():
-            dialog.set_initial_folder(Gio.File.new_for_path(default))
-        dialog.select_folder(self, None, self._on_new_session_folder)
-
-    def _on_new_session_folder(self, dialog: Gtk.FileDialog, result) -> None:
-        try:
-            folder = dialog.select_folder_finish(result)
-        except GLib.Error:
-            return  # cancelled
-        cwd = folder.get_path()
-        self.state.set_setting("new_session_dir", cwd)  # remember for next time
-        self._start_new_session(cwd, getattr(self, "_new_session_provider", None))
+            dialog.set_current_folder(default)
+        response = dialog.run()
+        if response == Gtk.ResponseType.OK:
+            cwd = dialog.get_filename()
+            self.state.set_setting("new_session_dir", cwd)
+            self._start_new_session(cwd, getattr(self, "_new_session_provider", None))
+        dialog.destroy()
 
     def _start_new_session(self, cwd: str, provider=None) -> None:
         provider = provider or self._default_provider()
@@ -349,170 +386,249 @@ class MainWindow(Adw.ApplicationWindow):
             f"new {provider.name} session — {cwd}",
         )
 
-    def _add_tab(self, tab: TerminalTab, title: str, tooltip: str) -> Adw.TabPage:
-        page = self.tab_view.append(tab)
-        page.set_title(title)
-        page.set_tooltip(tooltip)
-        tab.connect("process-exited", self._on_process_exited, page)
-        tab.terminal.connect("contents-changed", self._on_terminal_output, page)
-        self.tab_view.set_selected_page(page)
-        self.content_stack.set_visible_child_name("tabs")
-        self._apply_tab_status(page)
-        GLib.idle_add(tab.grab_terminal_focus)
-        return page
+    def _add_tab(self, tab: TerminalTab, title: str, tooltip: str) -> None:
+        self._tab_titles[tab] = title
+        self._base_titles[tab] = title
 
-    def _apply_tab_status(self, page: Adw.TabPage) -> None:
-        """Mirror the sidebar status dot onto the tab itself."""
-        status = "attention" if page.get_needs_attention() else "open"
-        page.set_icon(_status_icon(status))
+        def on_close_clicked(_btn, t=tab):
+            self._request_close_tab(t)
+
+        tab_label = _make_tab_label(title, on_close_clicked)
+        tab_label.set_tooltip_text(tooltip)
+        tab_label.add_events(Gdk.EventMask.BUTTON_PRESS_MASK)
+        tab_label.connect("button-press-event", self._on_tab_label_button_press, tab)
+
+        page_num = self.notebook.append_page(tab, tab_label)
+        self.notebook.set_tab_reorderable(tab, True)
+        tab.connect("process-exited", self._on_process_exited)
+        tab.terminal.connect("contents-changed", self._on_terminal_output, tab)
+        self.notebook.set_current_page(page_num)
+        self.content_stack.set_visible_child_name("tabs")
+        self.close_all_btn.set_visible(self.notebook.get_n_pages() > 1)
+        tab.show_all()
+        GLib.idle_add(tab.grab_terminal_focus)
+
+    def _update_tab_title(self, tab: TerminalTab, title: str) -> None:
+        self._tab_titles[tab] = title
+        page_num = self.notebook.page_num(tab)
+        if page_num < 0:
+            return
+
+        def on_close_clicked(_btn, t=tab):
+            self._request_close_tab(t)
+
+        new_label = _make_tab_label(title, on_close_clicked)
+        new_label.add_events(Gdk.EventMask.BUTTON_PRESS_MASK)
+        new_label.connect("button-press-event", self._on_tab_label_button_press, tab)
+        tooltip = self.notebook.get_tab_label(tab)
+        if tooltip:
+            new_label.set_tooltip_text(tooltip.get_tooltip_text() or "")
+        self.notebook.set_tab_label(tab, new_label)
+
+    def _request_close_tab(self, tab: TerminalTab) -> None:
+        if tab in self._confirmed_closes or not tab.has_running_command():
+            self._remove_tab(tab)
+            return
+        if tab not in self._closing_tabs:
+            self._graceful_close(tab)
+
+    def _remove_tab(self, tab: TerminalTab) -> None:
+        self._confirmed_closes.discard(tab)
+        self._closing_tabs.pop(tab, None)
+        self._tab_titles.pop(tab, None)
+        self._base_titles.pop(tab, None)
+        self._needs_attention.discard(tab)
+        self._cancel_idle(tab)
+
+        session_id = self._session_id_of(tab)
+        if session_id:
+            self._tabs.pop(session_id, None)
+            self._sync_status(session_id)
+
+        page_num = self.notebook.page_num(tab)
+        if page_num >= 0:
+            self.notebook.remove_page(page_num)
+
+        if self.notebook.get_n_pages() == 0:
+            self.content_stack.set_visible_child_name("empty")
+        self.close_all_btn.set_visible(self.notebook.get_n_pages() > 1)
 
     def _close_current_tab(self) -> None:
-        page = self.tab_view.get_selected_page()
-        if page is not None:
-            self.tab_view.close_page(page)
+        page_num = self.notebook.get_current_page()
+        if page_num >= 0:
+            tab = self.notebook.get_nth_page(page_num)
+            if isinstance(tab, TerminalTab):
+                self._request_close_tab(tab)
 
     def _close_all_tabs(self) -> None:
-        pages = [self.tab_view.get_nth_page(i) for i in range(self.tab_view.get_n_pages())]
-        for page in pages:
-            self.tab_view.close_page(page)
+        tabs = []
+        for i in range(self.notebook.get_n_pages()):
+            tab = self.notebook.get_nth_page(i)
+            if isinstance(tab, TerminalTab):
+                tabs.append(tab)
+        for tab in tabs:
+            self._request_close_tab(tab)
 
-    def _close_confirmed(self, page: Adw.TabPage) -> None:
-        """Force-close (terminate the child) — the graceful-close fallback."""
-        self._confirmed_closes.add(page)
-        self.tab_view.close_page(page)
+    def _next_tab(self) -> None:
+        if self.notebook.get_current_page() < self.notebook.get_n_pages() - 1:
+            self.notebook.next_page()
 
-    def _graceful_close(self, page: Adw.TabPage) -> None:
-        """Ask the agent to exit cleanly (e.g. Claude's /exit), then close once the
-        shell returns. Falls back to a force-close after a timeout. Agents with no
-        clean-exit command (e.g. Cursor) are force-closed directly."""
-        tab = page.get_child()
-        if not isinstance(tab, TerminalTab):
-            self._close_confirmed(page)
-            return
+    def _prev_tab(self) -> None:
+        if self.notebook.get_current_page() > 0:
+            self.notebook.prev_page()
+
+    def _graceful_close(self, tab: TerminalTab) -> None:
         exit_text = tab.provider.graceful_exit()
         if not exit_text:
-            self._close_confirmed(page)
+            self._confirmed_closes.add(tab)
+            self._remove_tab(tab)
             return
-        self._closing_pages[page] = 0
-        # Enter in a raw-mode TUI is carriage return, not newline.
+        self._closing_tabs[tab] = 0
         tab.feed_child_text(exit_text)
-        GLib.timeout_add(300, self._poll_graceful, page, tab)
+        GLib.timeout_add(300, self._poll_graceful, tab)
 
-    def _poll_graceful(self, page: Adw.TabPage, tab: TerminalTab) -> bool:
-        if page not in self._closing_pages:
-            return GLib.SOURCE_REMOVE  # already closed
-        if not tab.has_running_command():
-            tab.feed_child_text("exit\r")  # close the shell → child-exited closes the tab
+    def _poll_graceful(self, tab: TerminalTab) -> bool:
+        if tab not in self._closing_tabs:
             return GLib.SOURCE_REMOVE
-        self._closing_pages[page] += 1
-        if self._closing_pages[page] >= 40:  # ~12s safety net
-            self._close_confirmed(page)
+        if not tab.has_running_command():
+            tab.feed_child_text("exit\r")
+            return GLib.SOURCE_REMOVE
+        self._closing_tabs[tab] += 1
+        if self._closing_tabs[tab] >= 40:
+            self._confirmed_closes.add(tab)
+            self._remove_tab(tab)
             return GLib.SOURCE_REMOVE
         return GLib.SOURCE_CONTINUE
 
     def _sync_status(self, session_id: str) -> None:
-        page = self._pages.get(session_id)
-        if page is None:
+        tab = self._tabs.get(session_id)
+        if tab is None:
             status = ""
-        elif page.get_needs_attention():
+        elif tab in self._needs_attention:
             status = "attention"
         else:
             status = "open"
         self.store.set_status(session_id, status)
         self.sidebar.update_footer()
 
-    def _session_id_of(self, page: Adw.TabPage) -> str | None:
-        tab = page.get_child()
-        if isinstance(tab, TerminalTab) and tab.session_id and not tab.fork:
+    def _session_id_of(self, tab: TerminalTab) -> str | None:
+        if tab.session_id and not tab.fork:
             return tab.session_id
         return None
 
-    def _on_terminal_output(self, _terminal, page: Adw.TabPage) -> None:
-        if self.tab_view.get_selected_page() is page:
+    def _on_terminal_output(self, _terminal, tab: TerminalTab) -> None:
+        current_page = self.notebook.get_current_page()
+        if current_page >= 0 and self.notebook.get_nth_page(current_page) is tab:
             return
-        if not page.get_needs_attention():
-            page.set_needs_attention(True)
-            self._apply_tab_status(page)
-            session_id = self._session_id_of(page)
+        if tab not in self._needs_attention:
+            self._needs_attention.add(tab)
+            session_id = self._session_id_of(tab)
             if session_id:
                 self._sync_status(session_id)
         if self.state.get_setting("notify_idle"):
-            self._schedule_idle_notify(page)
+            self._schedule_idle_notify(tab)
 
-    def _on_selected_page_changed(self, view: Adw.TabView, _pspec) -> None:
-        page = view.get_selected_page()
-        if page is None:
+    def _on_page_switched(self, notebook: Gtk.Notebook, page: Gtk.Widget, page_num: int) -> None:
+        if not isinstance(page, TerminalTab):
             return
-        self._cancel_idle(page)  # foreground now; no "finished" notification
-        if page.get_needs_attention():
-            page.set_needs_attention(False)
-            self._apply_tab_status(page)
+        self._cancel_idle(page)
+        if page in self._needs_attention:
+            self._needs_attention.discard(page)
             session_id = self._session_id_of(page)
             if session_id:
                 self._sync_status(session_id)
-        if isinstance(page.get_child(), TerminalTab):
-            GLib.idle_add(page.get_child().grab_terminal_focus)
+        GLib.idle_add(page.grab_terminal_focus)
 
     # -- idle notifications --------------------------------------------------
 
-    def _schedule_idle_notify(self, page: Adw.TabPage) -> None:
-        self._cancel_idle(page)
-        self._idle_sources[page] = GLib.timeout_add(_IDLE_NOTIFY_MS, self._fire_idle_notify, page)
+    def _schedule_idle_notify(self, tab: TerminalTab) -> None:
+        self._cancel_idle(tab)
+        self._idle_sources[tab] = GLib.timeout_add(_IDLE_NOTIFY_MS, self._fire_idle_notify, tab)
 
-    def _cancel_idle(self, page: Adw.TabPage) -> None:
-        source = self._idle_sources.pop(page, None)
+    def _cancel_idle(self, tab: TerminalTab) -> None:
+        source = self._idle_sources.pop(tab, None)
         if source is not None:
             GLib.source_remove(source)
 
-    def _fire_idle_notify(self, page: Adw.TabPage) -> bool:
-        self._idle_sources.pop(page, None)
-        if page is self.tab_view.get_selected_page() or not self.state.get_setting("notify_idle"):
+    def _fire_idle_notify(self, tab: TerminalTab) -> bool:
+        self._idle_sources.pop(tab, None)
+        current_page = self.notebook.get_current_page()
+        if current_page >= 0 and self.notebook.get_nth_page(current_page) is tab:
+            return GLib.SOURCE_REMOVE
+        if not self.state.get_setting("notify_idle"):
             return GLib.SOURCE_REMOVE
         app = self.get_application()
         if app is not None:
-            session_id = self._session_id_of(page) or ""
-            notification = Gio.Notification.new(page.get_title())
+            title = self._tab_titles.get(tab, "Session")
+            session_id = self._session_id_of(tab) or ""
+            notification = Gio.Notification.new(title)
             notification.set_body("Claude finished responding.")
-            notification.set_default_action_and_target_value(
+            notification.set_default_action_and_target(
                 "app.focus-session", GLib.Variant("s", session_id)
             )
-            app.send_notification(session_id or page.get_title(), notification)
+            app.send_notification(session_id or title, notification)
         return GLib.SOURCE_REMOVE
 
     def focus_session(self, session_id: str) -> None:
-        page = self._pages.get(session_id)
-        if page is not None:
-            self.tab_view.set_selected_page(page)
+        tab = self._tabs.get(session_id)
+        if tab is not None:
+            page_num = self.notebook.page_num(tab)
+            if page_num >= 0:
+                self.notebook.set_current_page(page_num)
 
-    # -- tab rename / menu ---------------------------------------------------
+    # -- tab events ---------------------------------------------------
 
-    def _on_tab_setup_menu(self, _view: Adw.TabView, page: Adw.TabPage | None) -> None:
-        if page is not None:
-            self._menu_page = page
+    def _on_tab_label_button_press(self, _label, event: Gdk.EventButton, tab: TerminalTab) -> bool:
+        if event.button == 3:
+            self._show_tab_menu(tab, event)
+            return True
+        return False
 
-    def _rename_tab(self) -> None:
-        page = self._menu_page or self.tab_view.get_selected_page()
-        if page is None:
-            return
-        session_id = self._session_id_of(page)
-        if session_id:  # real session tab → rename the session (syncs sidebar)
+    def _show_tab_menu(self, tab: TerminalTab, event: Gdk.EventButton) -> None:
+        menu = Gtk.Menu()
+
+        def add_item(label: str, callback, sensitive: bool = True) -> None:
+            item = Gtk.MenuItem(label=label)
+            item.set_sensitive(sensitive)
+            item.connect("activate", lambda *_: callback())
+            menu.append(item)
+
+        add_item(_("Rename…"), lambda: self._rename_tab(tab))
+        add_item(_("Set emoji…"), lambda: self._set_tab_emoji(tab))
+        add_item(
+            _("Copy session ID"),
+            lambda: self._copy_tab_session_id(tab),
+            bool(tab.session_id),
+        )
+        menu.append(Gtk.SeparatorMenuItem())
+        add_item(_("Close tab"), lambda: self._request_close_tab(tab))
+
+        menu.attach_to_widget(self.notebook, None)
+        menu.connect("deactivate", lambda m: m.destroy())
+        menu.show_all()
+        menu.popup_at_pointer(event)
+
+    def _rename_tab(self, tab: TerminalTab) -> None:
+        session_id = self._session_id_of(tab)
+        if session_id:
             session = self.store.get_session(session_id)
             if session is not None:
                 self._prompt_rename_session(session)
             return
-        # fork / new-session tab → local title rename only
-        dialogs.rename_dialog(
-            self,
-            _("Tab name"),
-            page.get_title(),
-            lambda name: page.set_title(name.strip() or page.get_title()),
-        )
 
-    def _set_tab_emoji(self) -> None:
-        page = self._menu_page or self.tab_view.get_selected_page()
-        if page is None:
-            return
-        session_id = self._session_id_of(page)
+        current = self._tab_titles.get(tab, "")
+
+        def save(name: str) -> None:
+            name = name.strip()
+            if not name:
+                return
+            self._base_titles[tab] = name
+            self._update_tab_title(tab, name)
+
+        dialogs.rename_dialog(self, _("Tab name"), current, save)
+
+    def _set_tab_emoji(self, tab: TerminalTab) -> None:
+        session_id = self._session_id_of(tab)
         if session_id:
             current = self.state.get_emoji(session_id) or ""
 
@@ -520,58 +636,25 @@ class MainWindow(Adw.ApplicationWindow):
                 self.state.set_emoji(session_id, emoji.strip())
                 session = self.store.get_session(session_id)
                 if session is not None:
-                    page.set_title(self._tab_title(session))
+                    self._update_tab_title(tab, self._tab_title(session))
 
             dialogs.emoji_dialog(self, current, save)
-        else:  # fork / new tab: no persisted session, set a local prefix
-            base = self._base_titles.get(page, page.get_title())
-            self._base_titles[page] = base
-
-            def save(emoji: str) -> None:
-                emoji = emoji.strip()
-                page.set_title(f"{emoji} {base}" if emoji else base)
-
-            dialogs.emoji_dialog(self, "", save)
-
-    def _copy_tab_session_id(self) -> None:
-        page = self._menu_page or self.tab_view.get_selected_page()
-        if page is None:
             return
-        tab = page.get_child()
-        if isinstance(tab, TerminalTab) and tab.session_id:
-            self.get_clipboard().set(tab.session_id)
 
-    def _close_menu_tab(self) -> None:
-        page = self._menu_page or self.tab_view.get_selected_page()
-        if page is not None:
-            self.tab_view.close_page(page)
+        base = self._base_titles.get(tab, self._tab_titles.get(tab, "Session"))
 
-    def _on_process_exited(self, _tab: TerminalTab, _status: int, page: Adw.TabPage) -> None:
-        self.tab_view.close_page(page)
+        def save(emoji: str) -> None:
+            emoji = emoji.strip()
+            self._update_tab_title(tab, f"{emoji} {base}" if emoji else base)
 
-    def _on_close_page(self, view: Adw.TabView, page: Adw.TabPage) -> bool:
-        tab = page.get_child()
-        if (
-            isinstance(tab, TerminalTab)
-            and page not in self._confirmed_closes
-            and tab.has_running_command()
-        ):
-            if page not in self._closing_pages:  # start a graceful /exit in the background
-                self._graceful_close(page)
-            view.close_page_finish(page, False)  # keep the tab until it exits cleanly
-            return True
-        self._confirmed_closes.discard(page)
-        self._closing_pages.pop(page, None)
-        self._base_titles.pop(page, None)
-        self._cancel_idle(page)
-        session_id = self._session_id_of(page)
-        if session_id:
-            self._pages.pop(session_id, None)
-            self._sync_status(session_id)
-        view.close_page_finish(page, True)
-        if view.get_n_pages() == 0:
-            self.content_stack.set_visible_child_name("empty")
-        return True  # we handled it
+        dialogs.emoji_dialog(self, "", save)
+
+    def _copy_tab_session_id(self, tab: TerminalTab) -> None:
+        if tab.session_id:
+            Gtk.Clipboard.get(Gdk.SELECTION_CLIPBOARD).set_text(tab.session_id, -1)
+
+    def _on_process_exited(self, tab: TerminalTab, _status: int) -> None:
+        self._remove_tab(tab)
 
     # -- per-session actions ---------------------------------------------------
 
@@ -610,9 +693,9 @@ class MainWindow(Adw.ApplicationWindow):
     def _prompt_rename_session(self, session: Session) -> None:
         def save(name: str) -> None:
             self.store.rename(session.session_id, name)
-            page = self._pages.get(session.session_id)
-            if page is not None:
-                page.set_title(self._tab_title(session))
+            tab = self._tabs.get(session.session_id)
+            if tab is not None:
+                self._update_tab_title(tab, self._tab_title(session))
 
         dialogs.rename_dialog(
             self,
@@ -625,8 +708,11 @@ class MainWindow(Adw.ApplicationWindow):
         session = self._session_for(param)
         if session is None:
             return
-        launcher = Gtk.FileLauncher.new(Gio.File.new_for_path(str(session.jsonl_path)))
-        launcher.open_containing_folder(self, None, None)
+        parent_dir = str(session.jsonl_path.parent)
+        try:
+            subprocess.Popen(["xdg-open", parent_dir], start_new_session=True)
+        except OSError:
+            pass
 
     def _on_export_session(self, _action, param: GLib.Variant) -> None:
         session = self._session_for(param)
@@ -634,27 +720,33 @@ class MainWindow(Adw.ApplicationWindow):
             return
         title = self.store.display_name(session)
         safe = "".join(c if c.isalnum() or c in " -_" else "_" for c in title).strip() or "session"
-        dialog = Gtk.FileDialog(title=_("Export session as Markdown"), initial_name=f"{safe}.md")
-        dialog.save(self, None, lambda d, r: self._on_export_save(d, r, session, title))
 
-    def _on_export_save(self, dialog: Gtk.FileDialog, result, session: Session, title: str) -> None:
-        try:
-            gfile = dialog.save_finish(result)
-        except GLib.Error:
-            return  # cancelled
-        dest = gfile.get_path()
+        dialog = Gtk.FileChooserDialog(
+            title=_("Export session as Markdown"),
+            parent=self,
+            action=Gtk.FileChooserAction.SAVE,
+        )
+        dialog.add_button(_("Cancel"), Gtk.ResponseType.CANCEL)
+        dialog.add_button(_("Save"), Gtk.ResponseType.OK)
+        dialog.set_current_name(f"{safe}.md")
+        dialog.set_do_overwrite_confirmation(True)
 
-        def work() -> None:
-            error = None
-            try:
-                text = export_markdown(session.jsonl_path, title, session.session_id, session.cwd)
-                Path(dest).write_text(text, encoding="utf-8")
-            except OSError as err:
-                error = str(err)
-            if error:
-                GLib.idle_add(dialogs.error_dialog, self, _("Export failed"), error)
+        response = dialog.run()
+        if response == Gtk.ResponseType.OK:
+            dest = dialog.get_filename()
 
-        threading.Thread(target=work, daemon=True).start()
+            def work() -> None:
+                error = None
+                try:
+                    text = export_markdown(session.jsonl_path, title, session.session_id, session.cwd)
+                    Path(dest).write_text(text, encoding="utf-8")
+                except OSError as err:
+                    error = str(err)
+                if error:
+                    GLib.idle_add(dialogs.error_dialog, self, _("Export failed"), error)
+
+            threading.Thread(target=work, daemon=True).start()
+        dialog.destroy()
 
     def _on_session_details(self, _action, param: GLib.Variant) -> None:
         session = self._session_for(param)
@@ -679,14 +771,14 @@ class MainWindow(Adw.ApplicationWindow):
             if error:
                 dialogs.error_dialog(self, _("Could not trash transcript"), error)
                 return
-            page = self._pages.get(session.session_id)
-            if page is not None:
-                self.tab_view.close_page(page)
+            tab = self._tabs.get(session.session_id)
+            if tab is not None:
+                self._remove_tab(tab)
 
         dialogs.confirm_dialog(
             self,
             _("Move transcript to trash?"),
-            _("“{name}” will be removed from Claude's history.").format(
+            _("“{name}” will be removed from Claude’s history.").format(
                 name=self.store.display_name(session)
             )
             + "\n"
@@ -698,33 +790,34 @@ class MainWindow(Adw.ApplicationWindow):
     # -- preferences / about -------------------------------------------------
 
     def _show_about(self) -> None:
-        about = Adw.AboutDialog(
-            application_name="Agent Session Manager",
-            application_icon="io.github.r4nd3l.AgentSessionManager",
-            developer_name="Máté Molnár",
+        about = Gtk.AboutDialog(
+            transient_for=self,
+            modal=True,
+            program_name="Agent Session Manager",
+            logo_icon_name="io.github.r4nd3l.AgentSessionManager",
             version=__version__,
             license_type=Gtk.License.GPL_3_0,
-            comments=(
-                _("Manage and resume your AI coding agent sessions.\n\n"
-                "Unofficial community tool — not affiliated with or endorsed by Anthropic.")
+            comments=_(
+                "Manage and resume your AI coding agent sessions.\n\n"
+                "Unofficial community tool — not affiliated with or endorsed by Anthropic."
             ),
             website="https://github.com/r4nd3l/agent-session-manager",
-            issue_url="https://github.com/r4nd3l/agent-session-manager/issues",
         )
-        about.present(self)
+        about.run()
+        about.destroy()
 
     def _quick_switch(self) -> None:
-        if self._switcher is not None:  # already open — don't stack another
+        if self._switcher is not None:
             return
-        self._switcher = QuickSwitcher(self.store, lambda item: self.open_session(item.session))
-        self._switcher.connect("closed", lambda *_: setattr(self, "_switcher", None))
-        self._switcher.present(self)
+        self._switcher = QuickSwitcher(self.store, lambda item: self.open_session(item.session), parent=self)
+        self._switcher.connect("destroy", lambda *_: setattr(self, "_switcher", None))
+        self._switcher.present_switcher(self)
 
     def _show_preferences(self) -> None:
-        PreferencesDialog(self.state, self._apply_settings_to_tabs).present(self)
+        PreferencesDialog(self.state, self._apply_settings_to_tabs, parent=self).present_prefs(self)
 
     def _apply_settings_to_tabs(self) -> None:
-        for i in range(self.tab_view.get_n_pages()):
-            tab = self.tab_view.get_nth_page(i).get_child()
+        for i in range(self.notebook.get_n_pages()):
+            tab = self.notebook.get_nth_page(i)
             if isinstance(tab, TerminalTab):
                 tab.apply_settings(self.state.settings)

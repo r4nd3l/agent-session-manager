@@ -30,8 +30,8 @@ def _migrate_old_config() -> None:
 DEFAULT_SETTINGS = {
     "font": "",  # empty = VTE default
     "scrollback": 10_000,
-    "color_scheme": "system",  # system | light | dark
-    "terminal_theme": "Default",  # VTE color palette (see themes.py)
+    "color_scheme": "dark",  # system | light | dark
+    "terminal_theme": "Claude Code",  # VTE color palette (see themes.py)
     "language": "",  # UI language code; "" = follow the system locale
     "notify_idle": True,  # notify when a background session goes quiet
     "new_session_dir": "",  # remembered folder for new sessions (empty = ask)
@@ -66,6 +66,19 @@ class AppState:
         self.favorites = set(data.get("favorites") or [])
         self.hidden = set(data.get("hidden") or [])
         self.settings = {**DEFAULT_SETTINGS, **(data.get("settings") or {})}
+        self._migrate_theme(data)
+
+    def _migrate_theme(self, raw_data: dict) -> None:
+        """One-time: upgrade pre-v2 users to the Claude Code terminal theme."""
+        if self.settings.get("_theme_migrated"):
+            return
+        old = (raw_data.get("settings") or {})
+        if old.get("terminal_theme", "Default") == "Default":
+            self.settings["terminal_theme"] = "Claude Code"
+        if old.get("color_scheme", "system") == "system":
+            self.settings["color_scheme"] = "dark"
+        self.settings["_theme_migrated"] = True
+        self.save()
 
     def save(self) -> None:
         _CONFIG_DIR.mkdir(parents=True, exist_ok=True)

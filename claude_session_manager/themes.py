@@ -4,14 +4,24 @@ from __future__ import annotations
 
 import gi
 
-gi.require_version("Gtk", "4.0")
-gi.require_version("Vte", "3.91")
+gi.require_version("Gdk", "3.0")
+gi.require_version("Gtk", "3.0")
+gi.require_version("Vte", "2.91")
 from gi.repository import Gdk, Vte  # noqa: E402
 
 # Each theme: foreground, background, and 16 ANSI colors (hex without '#').
 # "Default" follows the system / app light-dark scheme (no custom colors).
 _THEMES: dict[str, dict | None] = {
     "Default": None,
+    "Claude Code": {
+        "fg": "c0caf5", "bg": "1a1b26",
+        "cursor": "D97757", "cursor_fg": "1a1b26",
+        "highlight": "D97757", "highlight_fg": "1a1b26",
+        "bold": "e0af68",
+        "palette": ["1a1b26", "D97757", "9ece6a", "e0af68", "7aa2f7", "bb9af7",
+                    "7dcfff", "c0caf5", "414868", "ff9e64", "73daca", "e0af68",
+                    "7aa2f7", "bb9af7", "b4f9f8", "d5d6db"],
+    },
     "Tango Dark": {
         "fg": "d3d7cf", "bg": "2e3436",
         "palette": ["2e3436", "cc0000", "4e9a06", "c4a000", "3465a4", "75507b",
@@ -97,7 +107,7 @@ def _rgba(hex_str: str) -> Gdk.RGBA:
 
 def apply_terminal_theme(terminal: Vte.Terminal, name: str | None) -> None:
     theme = _THEMES.get(name or DEFAULT_THEME)
-    if not theme:  # "Default" / unknown → follow the system colors
+    if not theme:
         terminal.set_default_colors()
         return
     terminal.set_colors(
@@ -105,3 +115,13 @@ def apply_terminal_theme(terminal: Vte.Terminal, name: str | None) -> None:
         _rgba(theme["bg"]),
         [_rgba(c) for c in theme["palette"]],
     )
+    if "cursor" in theme:
+        terminal.set_color_cursor(_rgba(theme["cursor"]))
+    if "cursor_fg" in theme:
+        terminal.set_color_cursor_foreground(_rgba(theme["cursor_fg"]))
+    if "highlight" in theme:
+        terminal.set_color_highlight(_rgba(theme["highlight"]))
+    if "highlight_fg" in theme:
+        terminal.set_color_highlight_foreground(_rgba(theme["highlight_fg"]))
+    if "bold" in theme:
+        terminal.set_color_bold(_rgba(theme["bold"]))

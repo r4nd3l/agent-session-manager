@@ -6,9 +6,9 @@ from collections.abc import Callable
 
 import gi
 
-gi.require_version("Gtk", "4.0")
-gi.require_version("Adw", "1")
-from gi.repository import Adw, Gdk, Gtk  # noqa: E402
+gi.require_version("Gdk", "3.0")
+gi.require_version("Gtk", "3.0")
+from gi.repository import Gdk, Gtk  # noqa: E402
 
 from .models import SessionItem
 from .store import SessionStore
@@ -17,46 +17,72 @@ _MAX_RESULTS = 50
 _ELLIPSIZE_END = 3  # Pango.EllipsizeMode.END
 
 
-class QuickSwitcher(Adw.Dialog):
-    def __init__(self, store: SessionStore, on_choose: Callable[[SessionItem], None]) -> None:
-        super().__init__(title="Switch session")
+class QuickSwitcher(Gtk.Window):
+    def __init__(self, store: SessionStore, on_choose: Callable[[SessionItem], None],
+                 parent: Gtk.Window | None = None) -> None:
+        super().__init__(
+            title="Switch session",
+            type=Gtk.WindowType.TOPLEVEL,
+            default_width=560,
+            default_height=460,
+        )
         self._store = store
         self._on_choose = on_choose
-        self.set_content_width(560)
-        self.set_content_height(460)
-        self.set_follows_content_size(False)
+        self.set_modal(True)
+        if parent is not None:
+            self.set_transient_for(parent)
+        self.set_position(Gtk.WindowPosition.CENTER_ON_PARENT)
+        self.set_type_hint(Gdk.WindowTypeHint.DIALOG)
 
-        self._entry = Gtk.SearchEntry(placeholder_text="Jump to a session…")
-        self._entry.set_margin_top(10)
-        self._entry.set_margin_start(10)
-        self._entry.set_margin_end(10)
+        self._entry = Gtk.SearchEntry()
+        self._entry.get_style_context().add_class("switcher-entry")
+        self._entry.set_placeholder_text("Jump to a session...")
+        self._entry.set_margin_top(12)
+        self._entry.set_margin_start(12)
+        self._entry.set_margin_end(12)
+        self._entry.set_margin_bottom(4)
         self._entry.connect("search-changed", lambda *_: self._refilter())
         self._entry.connect("activate", lambda *_: self._activate_selected())
 
-        key = Gtk.EventControllerKey()
-        key.connect("key-pressed", self._on_key)
-        self._entry.add_controller(key)
+        self._entry.connect("key-press-event", self._on_key)
+
+        sep = Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL)
 
         self._list = Gtk.ListBox()
         self._list.set_selection_mode(Gtk.SelectionMode.SINGLE)
-        self._list.add_css_class("navigation-sidebar")
+        self._list.get_style_context().add_class("navigation-sidebar")
         self._list.connect("row-activated", lambda _l, row: self._choose(row))
 
-        scrolled = Gtk.ScrolledWindow(child=self._list, vexpand=True)
+        scrolled = Gtk.ScrolledWindow()
+        scrolled.set_vexpand(True)
         scrolled.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+        scrolled.add(self._list)
 
-        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
-        box.append(self._entry)
-        box.append(scrolled)
-        self.set_child(box)
+        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
+        box.pack_start(self._entry, False, False, 0)
+        box.pack_start(sep, False, False, 0)
+        box.pack_start(scrolled, True, True, 0)
+        self.add(box)
 
         self.connect("map", lambda *_: self._entry.grab_focus())
+        self.connect("delete-event", lambda *_: self._on_close())
         self._refilter()
+
+    def present_switcher(self, parent: Gtk.Window | None = None) -> None:
+        if parent is not None:
+            self.set_transient_for(parent)
+        self.show_all()
+        self.present()
+
+    def _on_close(self) -> bool:
+        self.destroy()
+        return True
 
     # -- building / filtering ------------------------------------------------
 
     def _refilter(self) -> None:
-        self._list.remove_all()
+        for child in self._list.get_children():
+            self._list.remove(child)
         query = self._entry.get_text().strip().lower()
         model = self._store.model
         shown = 0
@@ -64,10 +90,11 @@ class QuickSwitcher(Adw.Dialog):
             item = model.get_item(i)
             if query and query not in item.search_text:
                 continue
-            self._list.append(self._make_row(item))
+            self._list.add(self._make_row(item))
             shown += 1
             if shown >= _MAX_RESULTS:
                 break
+        self._list.show_all()
         first = self._list.get_row_at_index(0)
         if first is not None:
             self._list.select_row(first)
@@ -75,33 +102,34 @@ class QuickSwitcher(Adw.Dialog):
     def _make_row(self, item: SessionItem) -> Gtk.ListBoxRow:
         row = Gtk.ListBoxRow()
         row.item = item
+        row.get_style_context().add_class("switcher-row")
 
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
-        box.set_margin_top(7)
-        box.set_margin_bottom(7)
+        box.set_margin_top(8)
+        box.set_margin_bottom(8)
         box.set_margin_start(12)
         box.set_margin_end(12)
 
         name = Gtk.Label(label=item.display_name, xalign=0.0)
-        name.add_css_class("heading")
+        name.get_style_context().add_class("heading")
         name.set_ellipsize(_ELLIPSIZE_END)
-        box.append(name)
+        box.pack_start(name, False, False, 0)
 
         subtitle = item.session.project_name
         if item.session.preview:
             subtitle += f" · {item.session.preview}"
         sub = Gtk.Label(label=subtitle, xalign=0.0)
-        sub.add_css_class("dim-label")
-        sub.add_css_class("caption")
+        sub.get_style_context().add_class("dim-label")
         sub.set_ellipsize(_ELLIPSIZE_END)
-        box.append(sub)
+        box.pack_start(sub, False, False, 0)
 
-        row.set_child(box)
+        row.add(box)
         return row
 
     # -- navigation ----------------------------------------------------------
 
-    def _on_key(self, _ctrl, keyval: int, _keycode: int, _state: Gdk.ModifierType) -> bool:
+    def _on_key(self, _widget, event: Gdk.EventKey) -> bool:
+        keyval = event.keyval
         if keyval == Gdk.KEY_Down:
             self._move(1)
             return True
@@ -109,7 +137,7 @@ class QuickSwitcher(Adw.Dialog):
             self._move(-1)
             return True
         if keyval == Gdk.KEY_Escape:
-            self.close()
+            self.destroy()
             return True
         return False
 
@@ -119,8 +147,8 @@ class QuickSwitcher(Adw.Dialog):
         target = self._list.get_row_at_index(index + delta)
         if target is not None:
             self._list.select_row(target)
-            target.grab_focus()  # scrolls it into view
-            self._entry.grab_focus()  # keep typing in the entry
+            target.grab_focus()
+            self._entry.grab_focus()
 
     # -- choosing ------------------------------------------------------------
 
@@ -130,4 +158,4 @@ class QuickSwitcher(Adw.Dialog):
     def _choose(self, row: Gtk.ListBoxRow | None) -> None:
         if row is not None and getattr(row, "item", None) is not None:
             self._on_choose(row.item)
-            self.close()
+            self.destroy()
