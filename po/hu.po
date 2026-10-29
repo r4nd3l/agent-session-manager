@@ -211,6 +211,84 @@ msgstr "Megjelenés"
 msgid "Color scheme"
 msgstr "Színséma"
 
+msgid "split right (a shell)"
+msgstr "felosztás jobbra (shell)"
+
+msgid "split down (a shell)"
+msgstr "felosztás lefelé (shell)"
+
+msgid "pane to the left"
+msgstr "bal oldali panel"
+
+msgid "pane below"
+msgstr "alsó panel"
+
+msgid "pane above"
+msgstr "felső panel"
+
+msgid "pane to the right"
+msgstr "jobb oldali panel"
+
+msgid "next pane"
+msgstr "következő panel"
+
+msgid "zoom the pane"
+msgstr "panel nagyítása"
+
+msgid "close the pane"
+msgstr "panel bezárása"
+
+msgid "new agent in this space"
+msgstr "új agent ebben a munkatérben"
+
+msgid "next tab"
+msgstr "következő fül"
+
+msgid "previous tab"
+msgstr "előző fül"
+
+msgid "go to tab"
+msgstr "ugrás fülre"
+
+msgid "new space"
+msgstr "új munkatér"
+
+msgid "rename tab"
+msgstr "fül átnevezése"
+
+msgid "close tab"
+msgstr "fül bezárása"
+
+msgid "go to agent"
+msgstr "ugrás agentre"
+
+msgid "toggle sidebar"
+msgstr "oldalsáv ki/be"
+
+msgid "preferences"
+msgstr "beállítások"
+
+msgid "this help"
+msgstr "ez a súgó"
+
+msgid "send Ctrl+B to the terminal"
+msgstr "Ctrl+B küldése a terminálnak"
+
+msgid "Ctrl+B, then…"
+msgstr "Ctrl+B, aztán…"
+
+msgid "Switch session"
+msgstr "Munkamenet váltása"
+
+msgid "Jump to a session…"
+msgstr "Ugrás munkamenetre…"
+
+msgid "Go to agent"
+msgstr "Ugrás agentre"
+
+msgid "Agent, space or state…"
+msgstr "Agent, munkatér vagy állapot…"
+
 msgid "Sidebar"
 msgstr "Oldalsáv"
 

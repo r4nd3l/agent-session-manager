@@ -5,30 +5,39 @@ from __future__ import annotations
 import shutil
 import subprocess
 import threading
+from collections.abc import Callable
 from pathlib import Path
 
 import gi
 
 gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
-from gi.repository import Adw, Gio, GLib, GObject, Gtk  # noqa: E402
+from gi.repository import Adw, Gdk, Gio, GLib, GObject, Gtk  # noqa: E402
 
 from . import __version__, dialogs, themes
 from .chatsessionview import ChatSessionTab
 from .i18n import _
 from .models import SessionItem
+from .panes import PaneContainer
 from .prefs import PreferencesDialog
 from .providers import available_providers, get_provider
 from .replayview import ReplayTab
 from .sessions import Session, export_markdown, session_from_file
 from .sidebar import SessionSidebar
-from .spaces import SpacesPanel, TabInfo, TabStrip
+from .spaces import SpacesPanel, TabInfo, TabStrip, space_name
 from .state import AppState
 from .store import SessionStore
-from .switcher import QuickSwitcher
+from .switcher import QuickSwitcher, SwitchEntry
 from .terminal import TerminalTab
 
 _GHOSTTY = shutil.which("ghostty")
+
+# keys that don't end the Ctrl+B prefix by themselves
+_MODIFIER_KEYS = {
+    Gdk.KEY_Shift_L, Gdk.KEY_Shift_R, Gdk.KEY_Control_L, Gdk.KEY_Control_R,
+    Gdk.KEY_Alt_L, Gdk.KEY_Alt_R, Gdk.KEY_Super_L, Gdk.KEY_Super_R,
+    Gdk.KEY_ISO_Level3_Shift, Gdk.KEY_Caps_Lock,
+}
 
 def _add_remove_button(chooser: Gtk.EmojiChooser, on_remove) -> None:
     """Put a "remove emoji" button at the end of the picker's search bar.
@@ -76,6 +85,7 @@ class MainWindow(Adw.ApplicationWindow):
         self._space_last: dict[str, Adw.TabPage] = {}  # last selected tab per space
         self._spaces_refresh_source: int | None = None
 
+        self._prefix = False  # Ctrl+B pressed, waiting for the command key
         self._install_actions()
         self._install_shortcuts()
 
@@ -309,6 +319,12 @@ class MainWindow(Adw.ApplicationWindow):
             )
         self.add_controller(controller)
 
+        # herdr / tmux style prefix: Ctrl+B, then a key (see _prefix_keys)
+        prefix = Gtk.EventControllerKey()
+        prefix.set_propagation_phase(Gtk.PropagationPhase.CAPTURE)
+        prefix.connect("key-pressed", self._on_prefix_key)
+        self.add_controller(prefix)
+
     # -- sidebar signal handlers -------------------------------------------------
 
     def _on_sidebar_open(self, _sidebar, item: SessionItem, fork: bool) -> None:
@@ -473,7 +489,8 @@ class MainWindow(Adw.ApplicationWindow):
         return page
 
     def _add_tab(self, tab: TerminalTab, title: str, tooltip: str) -> Adw.TabPage:
-        page = self._append_page(tab, title, tooltip, tab.cwd, tab.provider.id)
+        panes = PaneContainer(tab)  # splits live in here; `tab` stays the primary
+        page = self._append_page(panes, title, tooltip, tab.cwd, tab.provider.id)
         tab.connect("process-exited", self._on_process_exited, page)
         tab.connect("agent-state", self._on_agent_state, page)
         GLib.idle_add(tab.grab_terminal_focus)
@@ -570,7 +587,7 @@ class MainWindow(Adw.ApplicationWindow):
         """Ask the agent to exit cleanly (e.g. Claude's /exit), then close once the
         shell returns. Falls back to a force-close after a timeout. Agents with no
         clean-exit command (e.g. Cursor) are force-closed directly."""
-        tab = page.get_child()
+        tab = self._tab_of(page)
         if not isinstance(tab, TerminalTab):
             self._close_confirmed(page)
             return
@@ -606,8 +623,13 @@ class MainWindow(Adw.ApplicationWindow):
         self.store.set_status(session_id, status)
         self.sidebar.update_footer()
 
+    def _tab_of(self, page: Adw.TabPage) -> Gtk.Widget:
+        """A page's own tab widget: for terminals, the primary pane."""
+        child = page.get_child()
+        return child.primary if isinstance(child, PaneContainer) else child
+
     def _session_id_of(self, page: Adw.TabPage) -> str | None:
-        tab = page.get_child()
+        tab = self._tab_of(page)
         if isinstance(tab, TerminalTab) and tab.session_id and not tab.fork:
             return tab.session_id
         return None
@@ -645,7 +667,7 @@ class MainWindow(Adw.ApplicationWindow):
         app = self.get_application()
         if app is None or not self.state.get_setting("notify_idle"):
             return
-        tab = page.get_child()
+        tab = self._tab_of(page)
         agent = tab.provider.name if isinstance(tab, TerminalTab) else ""
         notification = Gio.Notification.new(page.get_title())
         if state == "blocked":
@@ -666,8 +688,8 @@ class MainWindow(Adw.ApplicationWindow):
         if page in self._page_space:
             self._space_last[self._page_space[page][0]] = page
         self._mark_seen()
-        if isinstance(page.get_child(), TerminalTab):
-            GLib.idle_add(page.get_child().grab_terminal_focus)
+        if isinstance(page.get_child(), PaneContainer):
+            GLib.idle_add(page.get_child().focused.grab_terminal_focus)
 
     def focus_session(self, target: str) -> None:
         """Select the tab of a session id (or, for unsaved tabs, a title)."""
@@ -820,7 +842,7 @@ class MainWindow(Adw.ApplicationWindow):
         page = self._menu_page or self.tab_view.get_selected_page()
         if page is None:
             return
-        tab = page.get_child()
+        tab = self._tab_of(page)
         if isinstance(tab, TerminalTab) and tab.session_id:
             self.get_clipboard().set(tab.session_id)
 
@@ -829,11 +851,121 @@ class MainWindow(Adw.ApplicationWindow):
         if page is not None:
             self.tab_view.close_page(page)
 
+    # -- panes & the Ctrl+B prefix ----------------------------------------------
+
+    def _panes(self) -> PaneContainer | None:
+        page = self.tab_view.get_selected_page()
+        child = page.get_child() if page is not None else None
+        return child if isinstance(child, PaneContainer) else None
+
+    def _split(self, orientation: Gtk.Orientation) -> None:
+        """A shell pane next to the focused one, in the tab's folder."""
+        panes = self._panes()
+        if panes is None:
+            return
+        primary = panes.primary
+        pane = TerminalTab(cwd=primary.cwd, settings=self.state.settings,
+                           provider=primary.provider, shell=True)
+        pane.connect("process-exited", lambda p, _status: panes.close(p))
+        panes.split(pane, orientation)
+
+    def _close_pane(self) -> None:
+        """Close the focused pane; on the agent's own pane, close the tab."""
+        panes = self._panes()
+        if panes is None:
+            return
+        pane = panes.focused
+        if pane is panes.primary:
+            self._close_current_tab()
+            return
+        panes.close(pane)
+        pane.hangup()
+
+    def _goto_tab(self, number: int) -> None:
+        space = self._current_space()
+        pages = [t.page for t in self._tab_infos() if t.space == space]
+        if 0 < number <= len(pages):
+            self.tab_view.set_selected_page(pages[number - 1])
+
+    def _prefix_commands(self) -> list[tuple[list[int], str, str, Callable[[int], None]]]:
+        """What follows Ctrl+B (herdr's defaults): (keyvals, keys as shown in
+        the help, description, callback(keyval))."""
+        def panes(method: str, *args) -> Callable[[int], None]:
+            return lambda _kv: (p := self._panes()) is not None and getattr(p, method)(*args)
+
+        def act(name: str) -> Callable[[int], None]:
+            return lambda _kv: self.activate_action(f"win.{name}", None)
+
+        k = Gdk
+        return [
+            ([k.KEY_v, k.KEY_percent], "v  %", _("split right (a shell)"),
+             lambda _kv: self._split(Gtk.Orientation.HORIZONTAL)),
+            ([k.KEY_minus, k.KEY_quotedbl], '-  "', _("split down (a shell)"),
+             lambda _kv: self._split(Gtk.Orientation.VERTICAL)),
+            ([k.KEY_h, k.KEY_Left], "h  ←", _("pane to the left"), panes("focus_direction", "left")),
+            ([k.KEY_j, k.KEY_Down], "j  ↓", _("pane below"), panes("focus_direction", "down")),
+            ([k.KEY_k, k.KEY_Up], "k  ↑", _("pane above"), panes("focus_direction", "up")),
+            ([k.KEY_l, k.KEY_Right], "l  →", _("pane to the right"), panes("focus_direction", "right")),
+            ([k.KEY_Tab], "Tab", _("next pane"), panes("cycle", 1)),
+            ([k.KEY_z], "z", _("zoom the pane"), panes("toggle_zoom")),
+            ([k.KEY_x], "x", _("close the pane"), lambda _kv: self._close_pane()),
+            ([k.KEY_c], "c", _("new agent in this space"), act("new-in-space")),
+            ([k.KEY_n], "n", _("next tab"), act("next-tab")),
+            ([k.KEY_p], "p", _("previous tab"), act("prev-tab")),
+            ([getattr(k, f"KEY_{n}") for n in range(1, 10)], "1–9", _("go to tab"),
+             lambda kv: self._goto_tab(kv - k.KEY_0)),
+            ([k.KEY_N], "N", _("new space"), act("new-space")),
+            ([k.KEY_T], "T", _("rename tab"), act("rename-tab")),
+            ([k.KEY_X], "X", _("close tab"), act("close-tab")),
+            ([k.KEY_g], "g", _("go to agent"), lambda _kv: self._goto_picker()),
+            ([k.KEY_b], "b", _("toggle sidebar"), act("toggle-sidebar")),
+            ([k.KEY_s], "s", _("preferences"), act("preferences")),
+            ([k.KEY_question], "?", _("this help"), lambda _kv: self._show_prefix_help()),
+        ]
+
+    def _set_prefix(self, active: bool) -> None:
+        self._prefix = active
+        self.tab_strip.set_prefix(active)
+
+    def _on_prefix_key(self, _ctrl, keyval: int, _keycode: int, state: Gdk.ModifierType) -> bool:
+        ctrl = bool(state & Gdk.ModifierType.CONTROL_MASK)
+        if not self._prefix:
+            focus = self.get_focus()
+            typing = focus is not None and (
+                isinstance(focus, Gtk.Text) or focus.get_ancestor(Adw.Dialog) is not None
+            )  # a search field or a dialog keeps its own Ctrl+B
+            if ctrl and keyval in (Gdk.KEY_b, Gdk.KEY_B) and not typing:
+                self._set_prefix(True)
+                return True
+            return False
+        if keyval in _MODIFIER_KEYS:
+            return True  # e.g. Shift on the way to "N"
+        self._set_prefix(False)
+        if ctrl and keyval in (Gdk.KEY_b, Gdk.KEY_B):  # Ctrl+B twice: send it through
+            if (panes := self._panes()) is not None:
+                panes.focused.feed_child_text("\x02")
+            return True
+        for keyvals, _keys, _text, callback in self._prefix_commands():
+            if keyval in keyvals:
+                callback(keyval)
+                break
+        return True  # like tmux, an unknown key just ends the prefix
+
+    def _show_prefix_help(self) -> None:
+        rows = [(keys, text) for _kv, keys, text, _cb in self._prefix_commands()]
+        rows.append(("Ctrl+B", _("send Ctrl+B to the terminal")))
+        label = Gtk.Label(label="\n".join(f"{keys:<8} {text}" for keys, text in rows), xalign=0.0)
+        label.add_css_class("monospace")
+        dialog = Adw.AlertDialog(heading=_("Ctrl+B, then…"))
+        dialog.set_extra_child(label)
+        dialog.add_response("ok", _("OK"))
+        dialog.present(self)
+
     def _on_process_exited(self, _tab: TerminalTab, _status: int, page: Adw.TabPage) -> None:
         self.tab_view.close_page(page)
 
     def _on_close_page(self, view: Adw.TabView, page: Adw.TabPage) -> bool:
-        tab = page.get_child()
+        tab = self._tab_of(page)
         if (
             isinstance(tab, TerminalTab)
             and page not in self._confirmed_closes
@@ -843,6 +975,11 @@ class MainWindow(Adw.ApplicationWindow):
                 self._graceful_close(page)
             view.close_page_finish(page, False)  # keep the tab until it exits cleanly
             return True
+        child = page.get_child()
+        if isinstance(child, PaneContainer):  # end the split shells with the tab
+            for pane in child.panes():
+                if pane is not child.primary:
+                    pane.hangup()
         self._confirmed_closes.discard(page)
         self._closing_pages.pop(page, None)
         self._base_titles.pop(page, None)
@@ -1055,8 +1192,45 @@ class MainWindow(Adw.ApplicationWindow):
     def _quick_switch(self) -> None:
         if self._switcher is not None:  # already open — don't stack another
             return
-        self._switcher = QuickSwitcher(self.store, lambda item: self.open_session(item.session))
-        self._switcher.connect("closed", lambda *_: setattr(self, "_switcher", None))
+        entries = []
+        for i in range(self.store.model.get_n_items()):
+            item = self.store.model.get_item(i)
+            subtitle = item.session.project_name
+            if item.session.preview:
+                subtitle += f" · {item.session.preview}"
+            entries.append(SwitchEntry(item.display_name, subtitle, item, item.search_text))
+        self._switcher = QuickSwitcher(
+            entries, lambda item: self.open_session(item.session),
+            _("Switch session"), _("Jump to a session…"),
+        )
+        self._switcher.connect("closed", self._on_switcher_closed)
+        self._switcher.present(self)
+
+    def _on_switcher_closed(self, *_args) -> None:
+        self._switcher = None
+        # the dialog hands focus back to its own entry; give it to the terminal
+        panes = self._panes()
+        if panes is not None:
+            GLib.idle_add(panes.focused.grab_terminal_focus)
+
+    def _goto_picker(self) -> None:
+        """Prefix+g: jump to any running agent, grouped by space. Typing a
+        state ("blocked", "working"…) filters by it, as herdr's b/w/i/d do."""
+        if self._switcher is not None:
+            return
+        infos = self._tab_infos()
+        order = list(dict.fromkeys(t.space for t in infos))  # spaces in tab order
+        entries = [
+            SwitchEntry(
+                f"{space_name(t.space)} · {t.title}", f"{t.agent} · {t.status}", t.page,
+                f"{t.title} {t.space} {t.agent} {t.status}", t.status,
+            )
+            for t in sorted(infos, key=lambda t: order.index(t.space))
+        ]
+        self._switcher = QuickSwitcher(
+            entries, self.tab_view.set_selected_page, _("Go to agent"), _("Agent, space or state…")
+        )
+        self._switcher.connect("closed", self._on_switcher_closed)
         self._switcher.present(self)
 
     def _show_preferences(self) -> None:
@@ -1071,6 +1245,7 @@ class MainWindow(Adw.ApplicationWindow):
 
     def _apply_settings_to_tabs(self) -> None:
         for i in range(self.tab_view.get_n_pages()):
-            tab = self.tab_view.get_nth_page(i).get_child()
-            if isinstance(tab, TerminalTab):
-                tab.apply_settings(self.state.settings)
+            child = self.tab_view.get_nth_page(i).get_child()
+            if isinstance(child, PaneContainer):
+                for pane in child.panes():
+                    pane.apply_settings(self.state.settings)

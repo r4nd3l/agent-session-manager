@@ -228,12 +228,19 @@ class TabStrip(Gtk.Box):
         scrolled.set_policy(Gtk.PolicyType.EXTERNAL, Gtk.PolicyType.NEVER)
         scrolled.set_propagate_natural_height(True)
         self.append(scrolled)
+        # shown while the Ctrl+B prefix waits for its key
+        self._prefix = Gtk.Label(label="PREFIX", visible=False, valign=Gtk.Align.CENTER)
+        self._prefix.add_css_class("prefix-pill")
+        self.append(self._prefix)
         add = Gtk.Button(label="+")
         add.add_css_class("flat")
         add.set_tooltip_text(_("New agent in this space"))
         add.set_action_name("win.new-in-space")
         self._tabs_add = add
         self._buttons: dict[Adw.TabPage, Gtk.Widget] = {}
+
+    def set_prefix(self, active: bool) -> None:
+        self._prefix.set_visible(active)
 
     def update(self, tabs: list[TabInfo], current: TabInfo | None) -> None:
         while (child := self._tabs.get_first_child()) is not None:

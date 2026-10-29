@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import signal
 import threading
 from pathlib import Path
 
@@ -48,7 +49,9 @@ class TerminalTab(Gtk.Box):
         jsonl_path: str | Path | None = None,
         options=None,
         command_override: str | None = None,
+        shell: bool = False,
     ) -> None:
+        """shell=True: a plain shell pane (a split), no agent in it."""
         super().__init__(orientation=Gtk.Orientation.VERTICAL)
         self.session_id = session_id
         self.cwd = cwd  # project folder = the tab's space
@@ -92,7 +95,8 @@ class TerminalTab(Gtk.Box):
         self._overlay.set_vexpand(True)
         self._overlay.set_child(scrolled)
         # The frame's label shows the agent (e.g. "claude"); TUI style only.
-        self._frame = Gtk.Frame(child=self._overlay, label=self.provider.id)
+        self.shell = shell
+        self._frame = Gtk.Frame(child=self._overlay, label="shell" if shell else self.provider.id)
         self._frame.add_css_class("term-frame")
         self._frame.set_overflow(Gtk.Overflow.VISIBLE)  # label sits on the border line
         self.append(self._frame)
@@ -108,7 +112,7 @@ class TerminalTab(Gtk.Box):
             self.apply_settings(settings)
         self.set_transcript_path(jsonl_path)
         self._spawn(cwd, session_id)
-        if jsonl_path is None and session_id is None:
+        if jsonl_path is None and session_id is None and not shell:
             self._start_transcript_resolver(cwd)  # find the new session's transcript
 
     # -- spawning ----------------------------------------------------------
@@ -125,7 +129,9 @@ class TerminalTab(Gtk.Box):
         # so aliases/env apply and the tab drops to a prompt when the agent exits.
         # The tab closes when the *shell* exits.
         self._initial_command: str | None = None
-        if self._command_override is not None:
+        if self.shell:
+            command = ""  # a split pane: just the shell
+        elif self._command_override is not None:
             command = self._command_override
         elif session_id is not None:
             command = self.provider.resume_command(session_id, fork=self.fork)
@@ -165,11 +171,22 @@ class TerminalTab(Gtk.Box):
             terminal.feed_child(f"{self._initial_command}\n".encode())
 
     def _on_child_exited(self, terminal: Vte.Terminal, status: int) -> None:
+        self._child_pid = None
         self.emit("process-exited", status)
+
+    def hangup(self) -> None:
+        """End the shell (a closed split pane), as closing a terminal would."""
+        if self._child_pid is not None:
+            try:
+                os.kill(self._child_pid, signal.SIGHUP)
+            except OSError:
+                pass
 
     # -- agent state ---------------------------------------------------------
 
     def _queue_state_check(self, *_args) -> None:
+        if self.shell:
+            return  # no agent to watch
         if self._state_source is None:  # debounce bursts of output
             self._state_source = GLib.timeout_add(250, self._check_state)
 

@@ -51,6 +51,15 @@ frame.term-frame { border: none; border-radius: 0; }
 .section-title button { padding: 0 6px; min-height: 22px; }
 .spaces-panel row.current { background-color: alpha(currentColor, 0.08); }
 
+.prefix-pill {
+  background-color: @accent_bg_color;
+  color: @accent_fg_color;
+  font-weight: bold;
+  font-size: 0.8em;
+  padding: 1px 8px;
+  margin: 0 6px;
+}
+
 /* per-space tab strip; the active tab clearly stands out */
 .tab-strip { padding: 3px 6px; }
 button.strip-tab { padding: 2px 10px; }

@@ -1,8 +1,10 @@
-"""Quick switcher: a type-ahead dialog to jump to any session."""
+"""Quick switcher: a type-ahead dialog to jump to a session (history) or
+to a running agent (the goto picker)."""
 
 from __future__ import annotations
 
 from collections.abc import Callable
+from dataclasses import dataclass
 
 import gi
 
@@ -10,23 +12,30 @@ gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
 from gi.repository import Adw, Gdk, Gtk  # noqa: E402
 
-from .models import SessionItem
-from .store import SessionStore
-
 _MAX_RESULTS = 50
 _ELLIPSIZE_END = 3  # Pango.EllipsizeMode.END
 
 
+@dataclass
+class SwitchEntry:
+    title: str
+    subtitle: str
+    payload: object  # handed to on_choose
+    search_text: str = ""  # defaults to title + subtitle
+    state: str = ""  # agent-state dot ("" = none)
+
+
 class QuickSwitcher(Adw.Dialog):
-    def __init__(self, store: SessionStore, on_choose: Callable[[SessionItem], None]) -> None:
-        super().__init__(title="Switch session")
-        self._store = store
+    def __init__(self, entries: list[SwitchEntry], on_choose: Callable[[object], None],
+                 title: str, placeholder: str) -> None:
+        super().__init__(title=title)
+        self._entries = entries
         self._on_choose = on_choose
         self.set_content_width(560)
         self.set_content_height(460)
         self.set_follows_content_size(False)
 
-        self._entry = Gtk.SearchEntry(placeholder_text="Jump to a session…")
+        self._entry = Gtk.SearchEntry(placeholder_text=placeholder)
         self._entry.set_margin_top(10)
         self._entry.set_margin_start(10)
         self._entry.set_margin_end(10)
@@ -58,13 +67,12 @@ class QuickSwitcher(Adw.Dialog):
     def _refilter(self) -> None:
         self._list.remove_all()
         query = self._entry.get_text().strip().lower()
-        model = self._store.model
         shown = 0
-        for i in range(model.get_n_items()):
-            item = model.get_item(i)
-            if query and query not in item.search_text:
+        for entry in self._entries:
+            text = (entry.search_text or f"{entry.title} {entry.subtitle}").lower()
+            if query and query not in text:
                 continue
-            self._list.append(self._make_row(item))
+            self._list.append(self._make_row(entry))
             shown += 1
             if shown >= _MAX_RESULTS:
                 break
@@ -72,9 +80,9 @@ class QuickSwitcher(Adw.Dialog):
         if first is not None:
             self._list.select_row(first)
 
-    def _make_row(self, item: SessionItem) -> Gtk.ListBoxRow:
+    def _make_row(self, entry: SwitchEntry) -> Gtk.ListBoxRow:
         row = Gtk.ListBoxRow()
-        row.item = item
+        row.payload = entry.payload
 
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
         box.set_margin_top(7)
@@ -82,15 +90,19 @@ class QuickSwitcher(Adw.Dialog):
         box.set_margin_start(12)
         box.set_margin_end(12)
 
-        name = Gtk.Label(label=item.display_name, xalign=0.0)
+        top = Gtk.Box(spacing=8)
+        if entry.state:
+            dot = Gtk.Box(valign=Gtk.Align.CENTER)
+            dot.add_css_class("status-dot")
+            dot.add_css_class(entry.state)
+            top.append(dot)
+        name = Gtk.Label(label=entry.title, xalign=0.0)
         name.add_css_class("heading")
         name.set_ellipsize(_ELLIPSIZE_END)
-        box.append(name)
+        top.append(name)
+        box.append(top)
 
-        subtitle = item.session.project_name
-        if item.session.preview:
-            subtitle += f" · {item.session.preview}"
-        sub = Gtk.Label(label=subtitle, xalign=0.0)
+        sub = Gtk.Label(label=entry.subtitle, xalign=0.0)
         sub.add_css_class("dim-label")
         sub.add_css_class("caption")
         sub.set_ellipsize(_ELLIPSIZE_END)
@@ -128,6 +140,6 @@ class QuickSwitcher(Adw.Dialog):
         self._choose(self._list.get_selected_row())
 
     def _choose(self, row: Gtk.ListBoxRow | None) -> None:
-        if row is not None and getattr(row, "item", None) is not None:
-            self._on_choose(row.item)
+        if row is not None and getattr(row, "payload", None) is not None:
+            self._on_choose(row.payload)
             self.close()

@@ -211,6 +211,84 @@ msgstr "Apariencia"
 msgid "Color scheme"
 msgstr "Esquema de color"
 
+msgid "split right (a shell)"
+msgstr "dividir a la derecha (shell)"
+
+msgid "split down (a shell)"
+msgstr "dividir abajo (shell)"
+
+msgid "pane to the left"
+msgstr "panel izquierdo"
+
+msgid "pane below"
+msgstr "panel inferior"
+
+msgid "pane above"
+msgstr "panel superior"
+
+msgid "pane to the right"
+msgstr "panel derecho"
+
+msgid "next pane"
+msgstr "siguiente panel"
+
+msgid "zoom the pane"
+msgstr "ampliar el panel"
+
+msgid "close the pane"
+msgstr "cerrar el panel"
+
+msgid "new agent in this space"
+msgstr "nuevo agente en este espacio"
+
+msgid "next tab"
+msgstr "pestaña siguiente"
+
+msgid "previous tab"
+msgstr "pestaña anterior"
+
+msgid "go to tab"
+msgstr "ir a la pestaña"
+
+msgid "new space"
+msgstr "nuevo espacio"
+
+msgid "rename tab"
+msgstr "renombrar pestaña"
+
+msgid "close tab"
+msgstr "cerrar pestaña"
+
+msgid "go to agent"
+msgstr "ir al agente"
+
+msgid "toggle sidebar"
+msgstr "mostrar/ocultar barra lateral"
+
+msgid "preferences"
+msgstr "preferencias"
+
+msgid "this help"
+msgstr "esta ayuda"
+
+msgid "send Ctrl+B to the terminal"
+msgstr "enviar Ctrl+B a la terminal"
+
+msgid "Ctrl+B, then…"
+msgstr "Ctrl+B, luego…"
+
+msgid "Switch session"
+msgstr "Cambiar de sesión"
+
+msgid "Jump to a session…"
+msgstr "Ir a una sesión…"
+
+msgid "Go to agent"
+msgstr "Ir al agente"
+
+msgid "Agent, space or state…"
+msgstr "Agente, espacio o estado…"
+
 msgid "Sidebar"
 msgstr "Barra lateral"
 

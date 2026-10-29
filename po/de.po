@@ -211,6 +211,84 @@ msgstr "Erscheinungsbild"
 msgid "Color scheme"
 msgstr "Farbschema"
 
+msgid "split right (a shell)"
+msgstr "rechts teilen (Shell)"
+
+msgid "split down (a shell)"
+msgstr "unten teilen (Shell)"
+
+msgid "pane to the left"
+msgstr "Bereich links"
+
+msgid "pane below"
+msgstr "Bereich unten"
+
+msgid "pane above"
+msgstr "Bereich oben"
+
+msgid "pane to the right"
+msgstr "Bereich rechts"
+
+msgid "next pane"
+msgstr "nächster Bereich"
+
+msgid "zoom the pane"
+msgstr "Bereich zoomen"
+
+msgid "close the pane"
+msgstr "Bereich schließen"
+
+msgid "new agent in this space"
+msgstr "neuer Agent in diesem Bereich"
+
+msgid "next tab"
+msgstr "nächster Tab"
+
+msgid "previous tab"
+msgstr "vorheriger Tab"
+
+msgid "go to tab"
+msgstr "zu Tab springen"
+
+msgid "new space"
+msgstr "neuer Bereich"
+
+msgid "rename tab"
+msgstr "Tab umbenennen"
+
+msgid "close tab"
+msgstr "Tab schließen"
+
+msgid "go to agent"
+msgstr "zu Agent springen"
+
+msgid "toggle sidebar"
+msgstr "Seitenleiste ein/aus"
+
+msgid "preferences"
+msgstr "Einstellungen"
+
+msgid "this help"
+msgstr "diese Hilfe"
+
+msgid "send Ctrl+B to the terminal"
+msgstr "Strg+B an das Terminal senden"
+
+msgid "Ctrl+B, then…"
+msgstr "Strg+B, dann…"
+
+msgid "Switch session"
+msgstr "Sitzung wechseln"
+
+msgid "Jump to a session…"
+msgstr "Zu einer Sitzung springen…"
+
+msgid "Go to agent"
+msgstr "Zu Agent springen"
+
+msgid "Agent, space or state…"
+msgstr "Agent, Bereich oder Status…"
+
 msgid "Sidebar"
 msgstr "Seitenleiste"
 
