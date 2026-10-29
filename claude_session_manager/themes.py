@@ -1,13 +1,11 @@
-"""Built-in terminal color palettes for the VTE terminal."""
+"""Built-in color themes: the VTE terminal palettes and, in the TUI style,
+the stylesheet that recolors the whole window.
+
+GTK is only imported by the two apply_* functions, so the theme data and the
+generated CSS stay testable without it.
+"""
 
 from __future__ import annotations
-
-import gi
-
-gi.require_version("Gtk", "4.0")
-gi.require_version("Adw", "1")
-gi.require_version("Vte", "3.91")
-from gi.repository import Adw, Gdk, Gtk, Vte  # noqa: E402
 
 # Each theme: foreground, background, and 16 ANSI colors (hex without '#').
 # "Default" follows the system / app light-dark scheme (no custom colors).
@@ -220,11 +218,13 @@ row.session-child:hover { background-color: @window_bg_color; }
 """
 
 
-_ui_provider: Gtk.CssProvider | None = None
+_ui_provider = None  # Gtk.CssProvider while the TUI style is loaded
 
 
 def apply_ui_style(settings: dict) -> None:
     """(Re)load the app-wide TUI stylesheet; classic style unloads it."""
+    from gi.repository import Adw, Gdk, Gtk
+
     global _ui_provider
     display = Gdk.Display.get_default()
     if _ui_provider is not None:
@@ -241,19 +241,17 @@ def apply_ui_style(settings: dict) -> None:
     )
 
 
-def _rgba(hex_str: str) -> Gdk.RGBA:
-    color = Gdk.RGBA()
-    color.parse(f"#{hex_str}")
-    return color
+def apply_terminal_theme(terminal, settings: dict) -> None:
+    """Color a Vte.Terminal with the effective theme."""
+    from gi.repository import Adw, Gdk
 
+    def rgba(hex_str: str) -> Gdk.RGBA:
+        color = Gdk.RGBA()
+        color.parse(f"#{hex_str}")
+        return color
 
-def apply_terminal_theme(terminal: Vte.Terminal, settings: dict) -> None:
     theme = effective_theme(settings, Adw.StyleManager.get_default().get_dark())
     if not theme:  # classic "Default" → follow the system colors
         terminal.set_default_colors()
         return
-    terminal.set_colors(
-        _rgba(theme["fg"]),
-        _rgba(theme["bg"]),
-        [_rgba(c) for c in theme["palette"]],
-    )
+    terminal.set_colors(rgba(theme["fg"]), rgba(theme["bg"]), [rgba(c) for c in theme["palette"]])

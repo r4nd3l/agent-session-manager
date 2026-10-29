@@ -10,7 +10,6 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from dataclasses import dataclass
-from pathlib import Path
 
 import gi
 
@@ -20,26 +19,9 @@ from gi.repository import Adw, Gdk, GLib, GObject, Gtk  # noqa: E402
 
 from .agentstate import rollup
 from .i18n import _
+from .sessions import git_branch
 
 _ELLIPSIZE_END = 3  # Pango.EllipsizeMode.END
-
-
-def git_branch(path: str | None) -> str:
-    """Current branch of the git checkout containing path ('' if none).
-    Reads .git/HEAD directly (worktrees: follows the gitdir file)."""
-    if not path:
-        return ""
-    for folder in (Path(path), *Path(path).parents):
-        git = folder / ".git"
-        try:
-            if git.is_file():  # worktree / submodule: "gitdir: <path>"
-                git = (folder / git.read_text().strip().removeprefix("gitdir: ")).resolve()
-            if git.is_dir():
-                head = (git / "HEAD").read_text().strip()
-                return head.removeprefix("ref: refs/heads/") if head.startswith("ref:") else head[:7]
-        except OSError:
-            return ""
-    return ""
 
 
 @dataclass
