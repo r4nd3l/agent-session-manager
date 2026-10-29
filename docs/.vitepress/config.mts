@@ -10,6 +10,7 @@ export default defineConfig({
   cleanUrls: true,
 
   head: [
+    ['link', { rel: 'icon', type: 'image/svg+xml', href: '/agent-session-manager/favicon.svg' }],
     ['meta', { name: 'theme-color', content: '#cba6f7' }],
     ['meta', { property: 'og:type', content: 'website' }],
     ['meta', { property: 'og:title', content: 'Agent Session Manager' }],
