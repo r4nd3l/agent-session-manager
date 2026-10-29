@@ -19,3 +19,6 @@ tar-ignore = debian/files
 tar-ignore = "debian/*.substvars"
 tar-ignore = "debian/*.debhelper"
 tar-ignore = debian/debhelper-build-stamp
+# local, git-ignored notes and tool settings: never ship them
+tar-ignore = 00_Temp.md
+tar-ignore = .claude
