@@ -13,7 +13,7 @@ gi.require_version("Gdk", "4.0")
 gi.require_version("Vte", "3.91")
 from gi.repository import Gdk, Gio, GLib, GObject, Gtk, Pango, Vte  # noqa: E402
 
-from . import themes  # noqa: E402
+from . import agentstate, themes  # noqa: E402
 from .i18n import _  # noqa: E402
 from .promptcard import build_question_card  # noqa: E402
 from .providers import Provider, get_provider  # noqa: E402
@@ -34,6 +34,8 @@ class TerminalTab(Gtk.Box):
     __gsignals__ = {
         # Emitted when the agent process exits (int = exit status).
         "process-exited": (GObject.SignalFlags.RUN_FIRST, None, (int,)),
+        # The agent's detected state changed ("working" | "blocked" | "idle").
+        "agent-state": (GObject.SignalFlags.RUN_FIRST, None, (str,)),
     }
 
     def __init__(
@@ -49,6 +51,7 @@ class TerminalTab(Gtk.Box):
     ) -> None:
         super().__init__(orientation=Gtk.Orientation.VERTICAL)
         self.session_id = session_id
+        self.cwd = cwd  # project folder = the tab's space
         self.fork = fork
         self.provider = provider or get_provider("claude")
         self._options = options
@@ -71,6 +74,12 @@ class TerminalTab(Gtk.Box):
         self.terminal.set_mouse_autohide(True)
         self.terminal.connect("child-exited", self._on_child_exited)
 
+        # Re-detect the agent's state when its screen or title changes.
+        self.agent_state = "idle"
+        self._state_source: int | None = None
+        self.terminal.connect("contents-changed", self._queue_state_check)
+        self.terminal.connect("window-title-changed", self._queue_state_check)
+
         self._search_bar = self._build_search_bar()
         self.append(self._search_bar)
 
@@ -82,7 +91,11 @@ class TerminalTab(Gtk.Box):
         self._overlay = Gtk.Overlay()
         self._overlay.set_vexpand(True)
         self._overlay.set_child(scrolled)
-        self.append(self._overlay)
+        # The frame's label shows the agent (e.g. "claude"); TUI style only.
+        self._frame = Gtk.Frame(child=self._overlay, label=self.provider.id)
+        self._frame.add_css_class("term-frame")
+        self._frame.set_overflow(Gtk.Overflow.VISIBLE)  # label sits on the border line
+        self.append(self._frame)
 
         self._transcript = TranscriptModel(jsonl_path, self.provider.id)
 
@@ -153,6 +166,31 @@ class TerminalTab(Gtk.Box):
 
     def _on_child_exited(self, terminal: Vte.Terminal, status: int) -> None:
         self.emit("process-exited", status)
+
+    # -- agent state ---------------------------------------------------------
+
+    def _queue_state_check(self, *_args) -> None:
+        if self._state_source is None:  # debounce bursts of output
+            self._state_source = GLib.timeout_add(250, self._check_state)
+
+    def _check_state(self) -> bool:
+        self._state_source = None
+        if self.has_running_command():
+            # The screen up to the cursor, by absolute rows: get_text_format()
+            # only returns the first line for a tab that isn't on screen.
+            _col, row = self.terminal.get_cursor_position()
+            screen = self.terminal.get_text_range_format(
+                Vte.Format.TEXT, max(0, row - self.terminal.get_row_count()), 0,
+                row, self.terminal.get_column_count(),
+            )[0] or ""
+            title = self.terminal.get_window_title() or ""
+            state = agentstate.detect_state(self.provider.id, title, screen)
+        else:
+            state = "idle"  # back at the shell prompt
+        if state != self.agent_state:
+            self.agent_state = state
+            self.emit("agent-state", state)
+        return GLib.SOURCE_REMOVE
 
     # -- search bar --------------------------------------------------------
 
@@ -370,7 +408,10 @@ class TerminalTab(Gtk.Box):
             self.terminal.set_scrollback_lines(int(settings.get("scrollback") or 10_000))
         except (TypeError, ValueError):
             pass
-        themes.apply_terminal_theme(self.terminal, settings.get("terminal_theme"))
+        themes.apply_terminal_theme(self.terminal, settings)
+        self._frame.get_label_widget().set_visible(
+            settings.get("ui_style", themes.DEFAULT_UI_STYLE) == "tui"
+        )
 
     def feed_message(self, text: str) -> None:
         self.terminal.feed(f"\r\n\x1b[1;33m[session manager]\x1b[0m {text}\r\n".encode())

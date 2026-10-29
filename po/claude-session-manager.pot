@@ -1,14 +1,14 @@
 # SOME DESCRIPTIVE TITLE.
 # Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
-# This file is distributed under the same license as the claude-session-manager package.
+# This file is distributed under the same license as the PACKAGE package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
 #
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: claude-session-manager\n"
-"Report-Msgid-Bugs-To: matemiller992@gmail.com\n"
-"POT-Creation-Date: 2026-06-11 17:18+0200\n"
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-10-29 15:26+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,7 +17,101 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: claude_session_manager/dialogs.py:26 claude_session_manager/sidebar.py:112
+#: claude_session_manager/chatsessionview.py:73
+msgid "Continuing the previous session — earlier messages aren't shown here."
+msgstr ""
+
+#: claude_session_manager/chatsessionview.py:86
+#, python-brace-format
+msgid "Read-only chat with {name} — analyses and answers, never edits."
+msgstr ""
+
+#: claude_session_manager/chatsessionview.py:88
+#, python-brace-format
+msgid ""
+"Chat with {name} — every file edit and command asks your permission first."
+msgstr ""
+
+#: claude_session_manager/chatsessionview.py:91
+#, python-brace-format
+msgid ""
+"Chat with {name} — ⚠ runs edits and commands automatically, without asking."
+msgstr ""
+
+#: claude_session_manager/chatsessionview.py:103
+#, python-brace-format
+msgid "Ask {name}…"
+msgstr ""
+
+#: claude_session_manager/chatsessionview.py:106
+msgid "Send"
+msgstr ""
+
+#: claude_session_manager/chatsessionview.py:109
+msgid "Stop"
+msgstr ""
+
+#: claude_session_manager/chatsessionview.py:160
+msgid "Rate limited — try again later."
+msgstr ""
+
+#: claude_session_manager/chatsessionview.py:164
+#, python-brace-format
+msgid "Error: {msg}"
+msgstr ""
+
+#: claude_session_manager/chatsessionview.py:170
+msgid "Session ended."
+msgstr ""
+
+#: claude_session_manager/chatsessionview.py:193
+#, python-brace-format
+msgid "Auto-allowed {tool}"
+msgstr ""
+
+#: claude_session_manager/chatsessionview.py:206
+#, python-brace-format
+msgid "{name} wants to use {tool}"
+msgstr ""
+
+#: claude_session_manager/chatsessionview.py:221
+msgid "Deny"
+msgstr ""
+
+#: claude_session_manager/chatsessionview.py:223
+#, python-brace-format
+msgid "Always allow {tool}"
+msgstr ""
+
+#: claude_session_manager/chatsessionview.py:225
+msgid "Allow once"
+msgstr ""
+
+#: claude_session_manager/chatsessionview.py:241
+msgid "The user declined this action."
+msgstr ""
+
+#: claude_session_manager/chatsessionview.py:249
+#, python-brace-format
+msgid "Always allowing {tool}."
+msgstr ""
+
+#: claude_session_manager/chatsessionview.py:251
+#, python-brace-format
+msgid "Allowed {tool}."
+msgstr ""
+
+#: claude_session_manager/chatsessionview.py:253
+#, python-brace-format
+msgid "Denied {tool}."
+msgstr ""
+
+#: claude_session_manager/chatsessionview.py:288
+#, python-brace-format
+msgid "{name} is thinking…"
+msgstr ""
+
+#: claude_session_manager/dialogs.py:26 claude_session_manager/sidebar.py:138
 msgid "Rename session"
 msgstr ""
 
@@ -25,121 +119,150 @@ msgstr ""
 msgid "Custom name"
 msgstr ""
 
-#: claude_session_manager/dialogs.py:30 claude_session_manager/dialogs.py:51
-#: claude_session_manager/dialogs.py:70
+#: claude_session_manager/dialogs.py:30 claude_session_manager/dialogs.py:49
+#: claude_session_manager/dialogs.py:112
 msgid "Cancel"
 msgstr ""
 
-#: claude_session_manager/dialogs.py:31 claude_session_manager/dialogs.py:52
+#: claude_session_manager/dialogs.py:31
 msgid "Save"
 msgstr ""
 
-#: claude_session_manager/dialogs.py:43
-msgid "Set tab emoji"
-msgstr ""
-
-#: claude_session_manager/dialogs.py:44
-msgid "Shown before the tab title. Leave empty to remove."
-msgstr ""
-
-#: claude_session_manager/dialogs.py:46
-msgid "e.g. 🚀"
-msgstr ""
-
-#: claude_session_manager/dialogs.py:83
+#: claude_session_manager/dialogs.py:62
 msgid "OK"
 msgstr ""
 
-#: claude_session_manager/dialogs.py:102
+#: claude_session_manager/dialogs.py:72
+#, python-brace-format
+msgid "New {name} session"
+msgstr ""
+
+#: claude_session_manager/dialogs.py:73
+msgid "Optional flags for this session."
+msgstr ""
+
+#: claude_session_manager/dialogs.py:79
+msgid "Model"
+msgstr ""
+
+#: claude_session_manager/dialogs.py:80 claude_session_manager/dialogs.py:86
+msgid "Default"
+msgstr ""
+
+#: claude_session_manager/dialogs.py:85
+msgid "Permission mode"
+msgstr ""
+
+#: claude_session_manager/dialogs.py:91
+msgid "Extra directory"
+msgstr ""
+
+#: claude_session_manager/dialogs.py:91 claude_session_manager/sidebar.py:568
+msgid "None"
+msgstr ""
+
+#: claude_session_manager/dialogs.py:92
+msgid "Choose…"
+msgstr ""
+
+#: claude_session_manager/dialogs.py:95
+msgid "Choose a directory"
+msgstr ""
+
+#: claude_session_manager/dialogs.py:113
+msgid "Start"
+msgstr ""
+
+#: claude_session_manager/dialogs.py:148
 msgid "No MCP servers configured"
 msgstr ""
 
-#: claude_session_manager/dialogs.py:107
+#: claude_session_manager/dialogs.py:153
 msgid "Global"
 msgstr ""
 
-#: claude_session_manager/dialogs.py:107
+#: claude_session_manager/dialogs.py:153
 msgid "Available to every project"
 msgstr ""
 
-#: claude_session_manager/dialogs.py:119 claude_session_manager/dialogs.py:124
+#: claude_session_manager/dialogs.py:165 claude_session_manager/dialogs.py:170
 msgid "MCP Servers"
 msgstr ""
 
-#: claude_session_manager/dialogs.py:119
+#: claude_session_manager/dialogs.py:165
 msgid "Read-only"
 msgstr ""
 
-#: claude_session_manager/dialogs.py:136
+#: claude_session_manager/dialogs.py:183
 msgid "Reading transcript…"
 msgstr ""
 
-#: claude_session_manager/dialogs.py:150
+#: claude_session_manager/dialogs.py:197
 msgid "Session details"
 msgstr ""
 
-#: claude_session_manager/dialogs.py:165
+#: claude_session_manager/dialogs.py:212
+msgid "Agent"
+msgstr ""
+
+#: claude_session_manager/dialogs.py:213
 msgid "Session ID"
 msgstr ""
 
-#: claude_session_manager/dialogs.py:166
+#: claude_session_manager/dialogs.py:214
 msgid "Directory"
 msgstr ""
 
-#: claude_session_manager/dialogs.py:166
+#: claude_session_manager/dialogs.py:214
 msgid "unknown"
 msgstr ""
 
-#: claude_session_manager/dialogs.py:167
+#: claude_session_manager/dialogs.py:217
 msgid "Created"
 msgstr ""
 
-#: claude_session_manager/dialogs.py:168
+#: claude_session_manager/dialogs.py:219
 msgid "Last activity"
 msgstr ""
 
-#: claude_session_manager/dialogs.py:169
+#: claude_session_manager/dialogs.py:220
 msgid "Messages"
 msgstr ""
 
-#: claude_session_manager/dialogs.py:170
+#: claude_session_manager/dialogs.py:222
 msgid "Tool calls"
 msgstr ""
 
-#: claude_session_manager/dialogs.py:171
+#: claude_session_manager/dialogs.py:224
 msgid "Models"
 msgstr ""
 
-#: claude_session_manager/dialogs.py:173
+#: claude_session_manager/dialogs.py:227
 msgid "Tokens"
 msgstr ""
 
-#: claude_session_manager/dialogs.py:178
+#: claude_session_manager/dialogs.py:232
 msgid "Transcript size"
 msgstr ""
 
-#: claude_session_manager/dialogs.py:182
+#: claude_session_manager/dialogs.py:236
 msgid "MCP"
 msgstr ""
 
-#: claude_session_manager/dialogs.py:190
+#: claude_session_manager/dialogs.py:244
 msgid "Available to this project"
 msgstr ""
 
-#: claude_session_manager/dialogs.py:195
+#: claude_session_manager/dialogs.py:249
 msgid "Tools used in this session"
 msgstr ""
 
-#: claude_session_manager/dialogs.py:199
+#: claude_session_manager/dialogs.py:253
 msgid "Recent activity"
 msgstr ""
 
-#: claude_session_manager/dialogs.py:202
+#: claude_session_manager/dialogs.py:256
 msgid "You"
-msgstr ""
-
-#: claude_session_manager/dialogs.py:202
-msgid "Claude"
 msgstr ""
 
 #: claude_session_manager/prefs.py:60
@@ -154,344 +277,567 @@ msgstr ""
 msgid "Dark"
 msgstr ""
 
-#: claude_session_manager/prefs.py:78 claude_session_manager/sidebar.py:237
+#: claude_session_manager/prefs.py:67
+msgid "Terminal workspace"
+msgstr ""
+
+#: claude_session_manager/prefs.py:68
+msgid "Classic (Adwaita)"
+msgstr ""
+
+#: claude_session_manager/prefs.py:84 claude_session_manager/window.py:110
 msgid "Preferences"
 msgstr ""
 
-#: claude_session_manager/prefs.py:82
+#: claude_session_manager/prefs.py:88
 msgid "General"
 msgstr ""
 
-#: claude_session_manager/prefs.py:84
+#: claude_session_manager/prefs.py:90
 msgid "Terminal"
 msgstr ""
 
-#: claude_session_manager/prefs.py:86
+#: claude_session_manager/prefs.py:92
 msgid "Font"
 msgstr ""
 
-#: claude_session_manager/prefs.py:86
+#: claude_session_manager/prefs.py:92
 msgid "Applies to all terminal tabs"
 msgstr ""
 
-#: claude_session_manager/prefs.py:96
+#: claude_session_manager/prefs.py:102
 msgid "Reset to default font"
 msgstr ""
 
-#: claude_session_manager/prefs.py:102
+#: claude_session_manager/prefs.py:108
 msgid "Scrollback lines"
 msgstr ""
 
-#: claude_session_manager/prefs.py:110
-msgid "Color theme"
-msgstr ""
-
-#: claude_session_manager/prefs.py:128
+#: claude_session_manager/prefs.py:115
 msgid "Appearance"
 msgstr ""
 
-#: claude_session_manager/prefs.py:129
+#: claude_session_manager/prefs.py:116
 msgid "Color scheme"
 msgstr ""
 
-#: claude_session_manager/prefs.py:144 claude_session_manager/prefs.py:150
-msgid "Language"
+#: claude_session_manager/prefs.py:127
+msgid "Interface style"
 msgstr ""
 
-#: claude_session_manager/prefs.py:144
-msgid "Restart to apply"
+#: claude_session_manager/prefs.py:147
+msgid "Color theme"
 msgstr ""
 
-#: claude_session_manager/prefs.py:145
-msgid "Restart now"
+#: claude_session_manager/prefs.py:166
+msgid "Sidebar"
 msgstr ""
 
-#: claude_session_manager/prefs.py:167
-msgid "Notifications"
+#: claude_session_manager/prefs.py:166
+msgid "Which sections the sidebar shows"
 msgstr ""
 
 #: claude_session_manager/prefs.py:169
-msgid "Notify when a session goes idle"
+msgid "Spaces"
+msgstr ""
+
+#: claude_session_manager/prefs.py:169
+msgid "Project folders with open tabs"
 msgstr ""
 
 #: claude_session_manager/prefs.py:170
-msgid "Desktop notification when a background tab stops producing output"
+msgid "Agents"
 msgstr ""
 
-#: claude_session_manager/sidebar.py:148 claude_session_manager/sidebar.py:446
+#: claude_session_manager/prefs.py:170
+msgid "Every running agent, across spaces"
+msgstr ""
+
+#: claude_session_manager/prefs.py:171
+msgid "History"
+msgstr ""
+
+#: claude_session_manager/prefs.py:171
+msgid "Past sessions, with search and favorites"
+msgstr ""
+
+#: claude_session_manager/prefs.py:180
+msgid "Show folder path"
+msgstr ""
+
+#: claude_session_manager/prefs.py:181
+msgid "Show each session's project folder path in the sidebar"
+msgstr ""
+
+#: claude_session_manager/prefs.py:193 claude_session_manager/prefs.py:199
+msgid "Language"
+msgstr ""
+
+#: claude_session_manager/prefs.py:193
+msgid "Restart to apply"
+msgstr ""
+
+#: claude_session_manager/prefs.py:194
+msgid "Restart now"
+msgstr ""
+
+#: claude_session_manager/prefs.py:216
+msgid "Notifications"
+msgstr ""
+
+#: claude_session_manager/prefs.py:218
+msgid "Notify about background agents"
+msgstr ""
+
+#: claude_session_manager/prefs.py:220
+msgid ""
+"Desktop notification when an agent you are not watching finishes or needs "
+"your input"
+msgstr ""
+
+#: claude_session_manager/promptcard.py:43
+msgid "Question"
+msgstr ""
+
+#: claude_session_manager/promptcard.py:45
+#, python-brace-format
+msgid "{n} questions"
+msgstr ""
+
+#: claude_session_manager/promptcard.py:62
+msgid "This prompt needs the terminal to answer."
+msgstr ""
+
+#: claude_session_manager/promptcard.py:66
+msgid "Answer in terminal"
+msgstr ""
+
+#: claude_session_manager/replayview.py:60
+msgid "Previous"
+msgstr ""
+
+#: claude_session_manager/replayview.py:62
+msgid "Play"
+msgstr ""
+
+#: claude_session_manager/replayview.py:64
+msgid "Next"
+msgstr ""
+
+#: claude_session_manager/replayview.py:66
+msgid "Show all"
+msgstr ""
+
+#: claude_session_manager/replayview.py:146
+msgid "Nothing to replay yet."
+msgstr ""
+
+#: claude_session_manager/sidebar.py:183 claude_session_manager/sidebar.py:523
 msgid "Remove from favorites"
 msgstr ""
 
-#: claude_session_manager/sidebar.py:148 claude_session_manager/sidebar.py:446
+#: claude_session_manager/sidebar.py:183 claude_session_manager/sidebar.py:523
 msgid "Add to favorites"
 msgstr ""
 
-#: claude_session_manager/sidebar.py:184
+#: claude_session_manager/sidebar.py:222
 msgid "Claude is waiting for your reply"
 msgstr ""
 
-#: claude_session_manager/sidebar.py:189
+#: claude_session_manager/sidebar.py:227
 msgid "You interrupted Claude here"
 msgstr ""
 
-#: claude_session_manager/sidebar.py:227
-msgid "Sessions"
+#: claude_session_manager/sidebar.py:271
+msgid "Main menu"
 msgstr ""
 
-#: claude_session_manager/sidebar.py:230
+#: claude_session_manager/sidebar.py:280
 msgid "Select sessions"
 msgstr ""
 
-#: claude_session_manager/sidebar.py:235
-msgid "Show hidden sessions"
-msgstr ""
-
-#: claude_session_manager/sidebar.py:236
-msgid "MCP servers"
-msgstr ""
-
-#: claude_session_manager/sidebar.py:238
-msgid "About Agent Session Manager"
-msgstr ""
-
-#: claude_session_manager/sidebar.py:242
+#: claude_session_manager/sidebar.py:285
 msgid "Refresh session list"
 msgstr ""
 
-#: claude_session_manager/sidebar.py:248
+#: claude_session_manager/sidebar.py:292
+msgid "history"
+msgstr ""
+
+#: claude_session_manager/sidebar.py:297
 msgid "Search sessions…"
 msgstr ""
 
-#: claude_session_manager/sidebar.py:253
+#: claude_session_manager/sidebar.py:302
 msgid "Collapse all groups"
 msgstr ""
 
-#: claude_session_manager/sidebar.py:258
+#: claude_session_manager/sidebar.py:307
 msgid "Expand all groups"
 msgstr ""
 
-#: claude_session_manager/sidebar.py:282
+#: claude_session_manager/sidebar.py:331
 msgid "No sessions found"
 msgstr ""
 
-#: claude_session_manager/sidebar.py:283
+#: claude_session_manager/sidebar.py:332
 msgid ""
 "Run claude in a project directory first — sessions will appear here "
 "automatically."
 msgstr ""
 
-#: claude_session_manager/sidebar.py:327
+#: claude_session_manager/sidebar.py:377
 #, python-brace-format
 msgid "{n} sessions"
 msgstr ""
 
-#: claude_session_manager/sidebar.py:328
+#: claude_session_manager/sidebar.py:378
 #, python-brace-format
 msgid "{n} projects"
 msgstr ""
 
-#: claude_session_manager/sidebar.py:332
+#: claude_session_manager/sidebar.py:382
 #, python-brace-format
 msgid "{n} open"
 msgstr ""
 
-#: claude_session_manager/sidebar.py:358
+#: claude_session_manager/sidebar.py:422
 msgid "Favorites"
 msgstr ""
 
-#: claude_session_manager/sidebar.py:438
+#: claude_session_manager/sidebar.py:504
 msgid "Open"
 msgstr ""
 
-#: claude_session_manager/sidebar.py:440
+#: claude_session_manager/sidebar.py:506
 msgid "Open in Ghostty"
 msgstr ""
 
-#: claude_session_manager/sidebar.py:441
+#: claude_session_manager/sidebar.py:508
 msgid "Fork session"
 msgstr ""
 
-#: claude_session_manager/sidebar.py:444 claude_session_manager/window.py:78
+#: claude_session_manager/sidebar.py:511
+#, python-brace-format
+msgid "Continue in chat ({mode})"
+msgstr ""
+
+#: claude_session_manager/sidebar.py:513
+msgid "Continue in chat"
+msgstr ""
+
+#: claude_session_manager/sidebar.py:521 claude_session_manager/window.py:92
 msgid "Rename…"
 msgstr ""
 
-#: claude_session_manager/sidebar.py:449
+#: claude_session_manager/sidebar.py:526
 msgid "Details…"
 msgstr ""
 
-#: claude_session_manager/sidebar.py:450 claude_session_manager/window.py:80
+#: claude_session_manager/sidebar.py:527
+msgid "Replay…"
+msgstr ""
+
+#: claude_session_manager/sidebar.py:528 claude_session_manager/window.py:95
 msgid "Copy session ID"
 msgstr ""
 
-#: claude_session_manager/sidebar.py:451
+#: claude_session_manager/sidebar.py:529
 msgid "Export as Markdown…"
 msgstr ""
 
-#: claude_session_manager/sidebar.py:452
+#: claude_session_manager/sidebar.py:530
 msgid "Reveal transcript"
 msgstr ""
 
-#: claude_session_manager/sidebar.py:455
+#: claude_session_manager/sidebar.py:533
 msgid "Unhide session"
 msgstr ""
 
-#: claude_session_manager/sidebar.py:455
+#: claude_session_manager/sidebar.py:533
 msgid "Hide session"
 msgstr ""
 
-#: claude_session_manager/sidebar.py:457
+#: claude_session_manager/sidebar.py:535
 msgid "Move transcript to trash…"
 msgstr ""
 
-#: claude_session_manager/sidebar.py:483
+#: claude_session_manager/sidebar.py:536
+msgid "Delete permanently…"
+msgstr ""
+
+#: claude_session_manager/sidebar.py:562
 msgid "All"
 msgstr ""
 
-#: claude_session_manager/sidebar.py:485
+#: claude_session_manager/sidebar.py:564
 msgid "Select all (filtered) sessions"
 msgstr ""
 
-#: claude_session_manager/sidebar.py:489
-msgid "None"
-msgstr ""
-
-#: claude_session_manager/sidebar.py:491
+#: claude_session_manager/sidebar.py:570
 msgid "Clear selection"
 msgstr ""
 
-#: claude_session_manager/sidebar.py:496
+#: claude_session_manager/sidebar.py:575
 msgid "Move selected transcripts to trash…"
 msgstr ""
 
-#: claude_session_manager/sidebar.py:497
+#: claude_session_manager/sidebar.py:576
 msgid "Hide selected"
 msgstr ""
 
-#: claude_session_manager/sidebar.py:498
+#: claude_session_manager/sidebar.py:577
 msgid "Remove selected from favorites"
 msgstr ""
 
-#: claude_session_manager/sidebar.py:499
+#: claude_session_manager/sidebar.py:578
 msgid "Add selected to favorites"
 msgstr ""
 
-#: claude_session_manager/sidebar.py:500
+#: claude_session_manager/sidebar.py:579
 msgid "Open selected in tabs"
 msgstr ""
 
-#: claude_session_manager/terminal.py:74
+#: claude_session_manager/spaces.py:131
+msgid "New space: start an agent in a folder"
+msgstr ""
+
+#: claude_session_manager/spaces.py:133
+msgid "spaces"
+msgstr ""
+
+#: claude_session_manager/spaces.py:141
+msgid "agents"
+msgstr ""
+
+#: claude_session_manager/spaces.py:167
+msgid "no open spaces"
+msgstr ""
+
+#: claude_session_manager/spaces.py:233
+msgid "New agent in this space"
+msgstr ""
+
+#: claude_session_manager/spaces.py:273
+msgid "Change emoji"
+msgstr ""
+
+#: claude_session_manager/terminal.py:120
 #, python-brace-format
 msgid "warning: project dir {cwd} no longer exists, starting in HOME"
 msgstr ""
 
-#: claude_session_manager/terminal.py:84
-msgid "warning: `claude` not found in PATH — starting a plain shell"
+#: claude_session_manager/terminal.py:136
+#, python-brace-format
+msgid "warning: `{cli}` not found in PATH — starting a plain shell"
 msgstr ""
 
-#: claude_session_manager/terminal.py:111
+#: claude_session_manager/terminal.py:161
 #, python-brace-format
 msgid "failed to start shell: {msg}"
 msgstr ""
 
-#: claude_session_manager/terminal.py:124
+#: claude_session_manager/terminal.py:199
 msgid "Find in terminal…"
 msgstr ""
 
-#: claude_session_manager/terminal.py:131
+#: claude_session_manager/terminal.py:206
 msgid "Previous match"
 msgstr ""
 
-#: claude_session_manager/terminal.py:133
+#: claude_session_manager/terminal.py:208
 msgid "Next match"
 msgstr ""
 
-#: claude_session_manager/window.py:79
-msgid "Set emoji…"
-msgstr ""
-
-#: claude_session_manager/window.py:81
-msgid "Close"
-msgstr ""
-
-#: claude_session_manager/window.py:89
-msgid "Toggle sidebar (F9)"
+#: claude_session_manager/window.py:53 claude_session_manager/window.py:94
+msgid "Remove emoji"
 msgstr ""
 
 #: claude_session_manager/window.py:93
-msgid "New session in folder…"
-msgstr ""
-
-#: claude_session_manager/window.py:94
-msgid "New window"
+msgid "Set emoji…"
 msgstr ""
 
 #: claude_session_manager/window.py:96
-msgid "New Claude session (Ctrl+Shift+T)"
+msgid "Close"
 msgstr ""
 
-#: claude_session_manager/window.py:102
+#: claude_session_manager/window.py:107
+msgid "Open session file…"
+msgstr ""
+
+#: claude_session_manager/window.py:108
+msgid "Show hidden sessions"
+msgstr ""
+
+#: claude_session_manager/window.py:109
+msgid "MCP servers"
+msgstr ""
+
+#: claude_session_manager/window.py:111
+msgid "About Agent Session Manager"
+msgstr ""
+
+#: claude_session_manager/window.py:115
+msgid "Toggle sidebar (F9)"
+msgstr ""
+
+#: claude_session_manager/window.py:121
+#, python-brace-format
+msgid "New {name} session…"
+msgstr ""
+
+#: claude_session_manager/window.py:126
+#, python-brace-format
+msgid "New {name} session (advanced)…"
+msgstr ""
+
+#: claude_session_manager/window.py:130
+#, python-brace-format
+msgid "Continue last {name} session…"
+msgstr ""
+
+#: claude_session_manager/window.py:136
+#, python-brace-format
+msgid "New {name} chat ({mode})"
+msgstr ""
+
+#: claude_session_manager/window.py:140
+#, python-brace-format
+msgid "New {name} chat…"
+msgstr ""
+
+#: claude_session_manager/window.py:142
+msgid "New window"
+msgstr ""
+
+#: claude_session_manager/window.py:144
+msgid "New session (Ctrl+Shift+T)"
+msgstr ""
+
+#: claude_session_manager/window.py:151
 msgid "Close all tabs"
 msgstr ""
 
-#: claude_session_manager/window.py:112
+#: claude_session_manager/window.py:161
 msgid "No session open"
 msgstr ""
 
-#: claude_session_manager/window.py:113
+#: claude_session_manager/window.py:162
 msgid "Pick a session from the sidebar, or start a new one."
 msgstr ""
 
-#: claude_session_manager/window.py:262
+#: claude_session_manager/window.py:333
 msgid "Some transcripts could not be trashed"
 msgstr ""
 
-#: claude_session_manager/window.py:266
+#: claude_session_manager/window.py:337
 #, python-brace-format
 msgid "Move {n} transcript(s) to trash?"
 msgstr ""
 
-#: claude_session_manager/window.py:267
+#: claude_session_manager/window.py:338
 msgid "The files are moved to the trash and can be restored."
 msgstr ""
 
-#: claude_session_manager/window.py:268 claude_session_manager/window.py:661
+#: claude_session_manager/window.py:339 claude_session_manager/window.py:979
 msgid "Move to Trash"
 msgstr ""
 
-#: claude_session_manager/window.py:309
+#: claude_session_manager/window.py:391 claude_session_manager/window.py:422
+#: claude_session_manager/window.py:442 claude_session_manager/window.py:491
 msgid "Choose project directory"
 msgstr ""
 
-#: claude_session_manager/window.py:477
+#: claude_session_manager/window.py:518
+#, python-brace-format
+msgid "Chat — {dir}"
+msgstr ""
+
+#: claude_session_manager/window.py:536
+#, python-brace-format
+msgid "Chat — {name}"
+msgstr ""
+
+#: claude_session_manager/window.py:550
+#, python-brace-format
+msgid "Replay — {name}"
+msgstr ""
+
+#: claude_session_manager/window.py:652
+#, python-brace-format
+msgid "{agent} needs your input."
+msgstr ""
+
+#: claude_session_manager/window.py:654
+#, python-brace-format
+msgid "{agent} finished."
+msgstr ""
+
+#: claude_session_manager/window.py:760
 msgid "Tab name"
 msgstr ""
 
-#: claude_session_manager/window.py:604
+#: claude_session_manager/window.py:922
 msgid "Export session as Markdown"
 msgstr ""
 
-#: claude_session_manager/window.py:622
+#: claude_session_manager/window.py:940
 msgid "Export failed"
 msgstr ""
 
-#: claude_session_manager/window.py:647
+#: claude_session_manager/window.py:965
 msgid "Could not trash transcript"
 msgstr ""
 
-#: claude_session_manager/window.py:655
+#: claude_session_manager/window.py:973
 msgid "Move transcript to trash?"
 msgstr ""
 
-#: claude_session_manager/window.py:656
+#: claude_session_manager/window.py:974
 #, python-brace-format
 msgid "“{name}” will be removed from Claude's history."
 msgstr ""
 
-#: claude_session_manager/window.py:660
+#: claude_session_manager/window.py:978
 msgid "The file is moved to the trash and can be restored."
 msgstr ""
 
-#: claude_session_manager/window.py:675
+#: claude_session_manager/window.py:991
+msgid "Could not delete transcript"
+msgstr ""
+
+#: claude_session_manager/window.py:999
+msgid "Delete session permanently?"
+msgstr ""
+
+#: claude_session_manager/window.py:1000
+#, python-brace-format
+msgid ""
+"“{name}” and its transcript file will be permanently deleted. This cannot be "
+"undone."
+msgstr ""
+
+#: claude_session_manager/window.py:1002
+msgid "Delete permanently"
+msgstr ""
+
+#: claude_session_manager/window.py:1009
+msgid "Open session transcript"
+msgstr ""
+
+#: claude_session_manager/window.py:1011
+msgid "Session transcripts (*.jsonl)"
+msgstr ""
+
+#: claude_session_manager/window.py:1031
+msgid "Could not open transcript"
+msgstr ""
+
+#: claude_session_manager/window.py:1032
+msgid "The file couldn't be read as a session transcript."
+msgstr ""
+
+#: claude_session_manager/window.py:1047
 msgid ""
 "Manage and resume your AI coding agent sessions.\n"
 "\n"

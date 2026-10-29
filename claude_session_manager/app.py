@@ -13,6 +13,7 @@ gi.require_version("Adw", "1")
 gi.require_version("Vte", "3.91")
 from gi.repository import Adw, Gdk, Gio, GLib, Gtk  # noqa: E402
 
+from . import themes
 from .prefs import apply_color_scheme
 from .state import AppState
 from .store import SessionStore
@@ -22,6 +23,9 @@ from .window import MainWindow
 _BUNDLED_ICONS = Path(__file__).resolve().parent.parent / "data" / "icons"
 
 _CSS = b"""
+/* classic style: the terminal frame is invisible (TUI style draws it) */
+frame.term-frame { border: none; border-radius: 0; }
+
 .status-dot {
   min-width: 8px;
   min-height: 8px;
@@ -30,6 +34,11 @@ _CSS = b"""
 }
 .status-dot.open { background-color: #2ec27e; }
 .status-dot.attention { background-color: #3584e4; }
+/* agent states on open tabs (spaces / agents / tab strip) */
+.status-dot.idle { background-color: transparent; box-shadow: inset 0 0 0 1.5px #2ec27e; }
+.status-dot.working { background-color: #e5a50a; }
+.status-dot.blocked { background-color: #e01b24; }
+.status-dot.done { background-color: #2ec27e; }
 
 .group-header { padding: 10px 10px 4px 10px; }
 
@@ -37,13 +46,20 @@ _CSS = b"""
 .waiting-badge { color: #e5a50a; }      /* Claude asked a question */
 .interrupted-badge { color: #e01b24; }  /* user stopped Claude mid-task */
 
-/* make the active tab clearly stand out from inactive ones */
-tabbar tab:checked {
+/* sidebar sections (spaces / agents / history) */
+.section-title { padding: 6px 8px 2px 14px; min-height: 28px; }
+.section-title button { padding: 0 6px; min-height: 22px; }
+.spaces-panel row.current { background-color: alpha(currentColor, 0.08); }
+
+/* per-space tab strip; the active tab clearly stands out */
+.tab-strip { padding: 3px 6px; }
+button.strip-tab { padding: 2px 10px; }
+button.strip-tab:not(.selected) label { opacity: 0.6; }
+button.strip-tab.selected {
   background-color: alpha(#D97757, 0.22);
   box-shadow: inset 0 -3px 0 #D97757;
 }
-tabbar tab:checked label { font-weight: bold; }
-tabbar tab:not(:checked) label { opacity: 0.6; }
+button.strip-tab.selected label { font-weight: bold; }
 
 .count-badge {
   background-color: alpha(currentColor, 0.1);
@@ -128,6 +144,9 @@ class App(Adw.Application):
         # state.json writes don't race.
         self.state = AppState()
         apply_color_scheme(self.state.get_setting("color_scheme"))
+        themes.apply_ui_style(self.state.settings)
+        # "Default" theme follows light/dark, so recolor when the scheme flips
+        Adw.StyleManager.get_default().connect("notify::dark", self._on_dark_changed)
         self.store = SessionStore(self.state)
         self.store.start()
 
@@ -139,6 +158,12 @@ class App(Adw.Application):
         new_window.connect("activate", lambda *_: self._new_window())
         self.add_action(new_window)
         self.set_accels_for_action("app.new-window", ["<Control><Shift>n"])
+
+    def _on_dark_changed(self, *_args) -> None:
+        themes.apply_ui_style(self.state.settings)
+        for window in self.get_windows():
+            if isinstance(window, MainWindow):
+                window.apply_preferences()
 
     def _new_window(self) -> MainWindow:
         window = MainWindow(application=self, state=self.state, store=self.store)

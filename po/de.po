@@ -211,6 +211,72 @@ msgstr "Erscheinungsbild"
 msgid "Color scheme"
 msgstr "Farbschema"
 
+msgid "Sidebar"
+msgstr "Seitenleiste"
+
+msgid "Which sections the sidebar shows"
+msgstr "Welche Abschnitte die Seitenleiste zeigt"
+
+msgid "Spaces"
+msgstr "Bereiche"
+
+msgid "Project folders with open tabs"
+msgstr "Projektordner mit offenen Tabs"
+
+msgid "Agents"
+msgstr "Agenten"
+
+msgid "Every running agent, across spaces"
+msgstr "Alle laufenden Agenten, bereichsübergreifend"
+
+msgid "History"
+msgstr "Verlauf"
+
+msgid "Past sessions, with search and favorites"
+msgstr "Frühere Sitzungen, mit Suche und Favoriten"
+
+msgid "Main menu"
+msgstr "Hauptmenü"
+
+msgid "Change emoji"
+msgstr "Emoji ändern"
+
+msgid "Remove emoji"
+msgstr "Emoji entfernen"
+
+msgid "new"
+msgstr "neu"
+
+msgid "menu"
+msgstr "menü"
+
+msgid "spaces"
+msgstr "bereiche"
+
+msgid "agents"
+msgstr "agenten"
+
+msgid "history"
+msgstr "verlauf"
+
+msgid "no open spaces"
+msgstr "keine offenen bereiche"
+
+msgid "New space: start an agent in a folder"
+msgstr "Neuer Bereich: Agent in einem Ordner starten"
+
+msgid "New agent in this space"
+msgstr "Neuer Agent in diesem Bereich"
+
+msgid "Interface style"
+msgstr "Oberflächenstil"
+
+msgid "Terminal workspace"
+msgstr "Terminal-Arbeitsbereich"
+
+msgid "Classic (Adwaita)"
+msgstr "Klassisch (Adwaita)"
+
 msgid "Language"
 msgstr "Sprache"
 
@@ -220,11 +286,17 @@ msgstr "Neustart erforderlich"
 msgid "Notifications"
 msgstr "Benachrichtigungen"
 
-msgid "Notify when a session goes idle"
-msgstr "Benachrichtigen, wenn eine Sitzung untätig wird"
+msgid "Notify about background agents"
+msgstr "Über Agenten im Hintergrund benachrichtigen"
 
-msgid "Desktop notification when a background tab stops producing output"
-msgstr "Desktop-Benachrichtigung, wenn ein Hintergrund-Tab keine Ausgabe mehr erzeugt"
+msgid "Desktop notification when an agent you are not watching finishes or needs your input"
+msgstr "Desktop-Benachrichtigung, wenn ein nicht beobachteter Agent fertig ist oder deine Eingabe braucht"
+
+msgid "{agent} needs your input."
+msgstr "{agent} braucht deine Eingabe."
+
+msgid "{agent} finished."
+msgstr "{agent} ist fertig."
 
 msgid "Claude is waiting for your reply"
 msgstr "Claude wartet auf deine Antwort"

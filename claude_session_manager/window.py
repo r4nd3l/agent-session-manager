@@ -13,7 +13,7 @@ gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
 from gi.repository import Adw, Gio, GLib, GObject, Gtk  # noqa: E402
 
-from . import __version__, dialogs
+from . import __version__, dialogs, themes
 from .chatsessionview import ChatSessionTab
 from .i18n import _
 from .models import SessionItem
@@ -22,6 +22,7 @@ from .providers import available_providers, get_provider
 from .replayview import ReplayTab
 from .sessions import Session, export_markdown, session_from_file
 from .sidebar import SessionSidebar
+from .spaces import SpacesPanel, TabInfo, TabStrip
 from .state import AppState
 from .store import SessionStore
 from .switcher import QuickSwitcher
@@ -29,26 +30,29 @@ from .terminal import TerminalTab
 
 _GHOSTTY = shutil.which("ghostty")
 
-# Quiet period before a background tab is considered "idle" / finished.
-_IDLE_NOTIFY_MS = 4000
-
-# Tab status dots, matching the sidebar (.status-dot CSS in app.py).
-_STATUS_COLORS = {"open": "#2ec27e", "attention": "#3584e4"}
-_status_icon_cache: dict[str, Gio.Icon] = {}
-
-
-def _status_icon(status: str) -> Gio.Icon | None:
-    if status not in _STATUS_COLORS:
+def _add_remove_button(chooser: Gtk.EmojiChooser, on_remove) -> None:
+    """Put a "remove emoji" button at the end of the picker's search bar.
+    ponytail: reaches into GtkEmojiChooser's internals (the .emoji-searchbar
+    box); if GTK changes them the button just doesn't appear — the tab menu's
+    "Remove emoji" still works."""
+    def find(widget: Gtk.Widget) -> Gtk.Widget | None:
+        if "emoji-searchbar" in widget.get_css_classes():
+            return widget
+        child = widget.get_first_child()
+        while child is not None:
+            if (found := find(child)) is not None:
+                return found
+            child = child.get_next_sibling()
         return None
-    icon = _status_icon_cache.get(status)
-    if icon is None:
-        svg = (
-            '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16">'
-            f'<circle cx="8" cy="8" r="4" fill="{_STATUS_COLORS[status]}"/></svg>'
-        ).encode()
-        icon = Gio.BytesIcon.new(GLib.Bytes.new(svg))
-        _status_icon_cache[status] = icon
-    return icon
+
+    bar = find(chooser)
+    if not isinstance(bar, Gtk.Box):
+        return
+    button = Gtk.Button(icon_name="edit-clear-symbolic", valign=Gtk.Align.CENTER)
+    button.add_css_class("flat")
+    button.set_tooltip_text(_("Remove emoji"))
+    button.connect("clicked", lambda *_: (on_remove(), chooser.popdown()))
+    bar.append(button)
 
 
 class MainWindow(Adw.ApplicationWindow):
@@ -65,27 +69,46 @@ class MainWindow(Adw.ApplicationWindow):
         self._closing_pages: dict[Adw.TabPage, int] = {}  # graceful close in progress -> attempts
         self._menu_page: Adw.TabPage | None = None
         self._base_titles: dict[Adw.TabPage, str] = {}  # fork/new tab title without emoji
-        self._idle_sources: dict[Adw.TabPage, int] = {}  # pending idle-notify timers
+        self._page_state: dict[Adw.TabPage, str] = {}  # working | blocked | done | idle
         self._switcher: QuickSwitcher | None = None
+        # page -> (space folder, agent label); a space = folder with open tabs
+        self._page_space: dict[Adw.TabPage, tuple[str, str]] = {}
+        self._space_last: dict[str, Adw.TabPage] = {}  # last selected tab per space
+        self._spaces_refresh_source: int | None = None
 
         self._install_actions()
         self._install_shortcuts()
 
         # --- content pane: header + tab bar + tab view ---
         self.tab_view = Adw.TabView()
+        # tab switching is per space (our next/prev actions), not global
+        self.tab_view.set_shortcuts(Adw.TabViewShortcuts.NONE)
+        self.tab_view.connect("notify::n-pages", lambda *_: self._queue_spaces_refresh())
+        self.connect("notify::is-active", self._mark_seen)  # back to the window = seen
         self.tab_view.connect("close-page", self._on_close_page)
         self.tab_view.connect("notify::selected-page", self._on_selected_page_changed)
-        self.tab_view.connect("setup-menu", self._on_tab_setup_menu)
 
-        tab_menu = Gio.Menu()
+        self.tab_menu = tab_menu = Gio.Menu()
         tab_menu.append(_("Rename…"), "win.rename-tab")
         tab_menu.append(_("Set emoji…"), "win.set-tab-emoji")
+        tab_menu.append(_("Remove emoji"), "win.remove-tab-emoji")
         tab_menu.append(_("Copy session ID"), "win.copy-tab-session-id")
         tab_menu.append(_("Close"), "win.close-menu-tab")
-        self.tab_view.set_menu_model(tab_menu)
 
-        tab_bar = Adw.TabBar(view=self.tab_view)
-        tab_bar.set_autohide(False)
+        # Shows only the current space's tabs (Adw.TabBar can't filter).
+        # ponytail: no drag-to-reorder; add when someone misses it
+        self.tab_strip = TabStrip()
+        self.tab_strip.connect("select", lambda _s, page: self.tab_view.set_selected_page(page))
+        self.tab_strip.connect("close", lambda _s, page: self.tab_view.close_page(page))
+        self.tab_strip.connect("menu", self._on_tab_strip_menu)
+        self.tab_strip.connect("emoji", lambda _s, page: self._set_tab_emoji(page))
+
+        app_menu = Gio.Menu()
+        app_menu.append(_("Open session file…"), "win.open-session-file")
+        app_menu.append(_("Show hidden sessions"), "win.show-hidden")
+        app_menu.append(_("MCP servers"), "win.mcp-servers")
+        app_menu.append(_("Preferences"), "win.preferences")
+        app_menu.append(_("About Agent Session Manager"), "win.about")
 
         content_header = Adw.HeaderBar()
         self.sidebar_toggle = Gtk.ToggleButton(icon_name="sidebar-show-symbolic", active=True)
@@ -123,6 +146,7 @@ class MainWindow(Adw.ApplicationWindow):
         new_btn.connect("clicked", lambda *_: self._new_session())
         content_header.pack_start(new_btn)
 
+
         self.close_all_btn = Gtk.Button(icon_name="tab-close-symbolic", visible=False)
         self.close_all_btn.set_tooltip_text(_("Close all tabs"))
         self.close_all_btn.connect("clicked", lambda *_: self._close_all_tabs())
@@ -144,11 +168,16 @@ class MainWindow(Adw.ApplicationWindow):
 
         content_view = Adw.ToolbarView()
         content_view.add_top_bar(content_header)
-        content_view.add_top_bar(tab_bar)
+        content_view.add_top_bar(self.tab_strip)
         content_view.set_content(self.content_stack)
 
-        # --- sidebar ---
-        self.sidebar = SessionSidebar(self.store)
+        # --- sidebar: spaces + agents on top, session history below ---
+        self.spaces_panel = SpacesPanel(self.state)
+        self.spaces_panel.connect("select-space", self._on_select_space)
+        self.spaces_panel.connect(
+            "select-page", lambda _p, page: self.tab_view.set_selected_page(page)
+        )
+        self.sidebar = SessionSidebar(self.store, top=self.spaces_panel, menu=app_menu)
         self.sidebar.connect("open-session", self._on_sidebar_open)
         self.sidebar.connect("open-many", self._on_sidebar_open_many)
         self.sidebar.connect("trash-many", self._on_sidebar_trash_many)
@@ -201,13 +230,16 @@ class MainWindow(Adw.ApplicationWindow):
             "mcp-servers": lambda *_: dialogs.mcp_browser_dialog(self),
             "focus-search": lambda *_: self.sidebar.focus_search(),
             "close-tab": lambda *_: self._close_current_tab(),
-            "next-tab": lambda *_: self.tab_view.select_next_page(),
-            "prev-tab": lambda *_: self.tab_view.select_previous_page(),
+            "next-tab": lambda *_: self._cycle_space_tab(1),
+            "prev-tab": lambda *_: self._cycle_space_tab(-1),
+            "new-space": lambda *_: self._choose_new_session_folder(),
+            "new-in-space": lambda *_: self._new_in_space(),
             "about": lambda *_: self._show_about(),
             "quick-switch": lambda *_: self._quick_switch(),
             "rename-tab": lambda *_: self._rename_tab(),
             "set-tab-emoji": lambda *_: self._set_tab_emoji(),
             "toggle-tab-emoji": lambda *_: self._toggle_tab_emoji(),
+            "remove-tab-emoji": lambda *_: self._remove_tab_emoji(),
             "open-session-file": lambda *_: self._open_session_file(),
             "copy-tab-session-id": lambda *_: self._copy_tab_session_id(),
             "close-menu-tab": lambda *_: self._close_menu_tab(),
@@ -262,9 +294,12 @@ class MainWindow(Adw.ApplicationWindow):
             ("<Control><Shift>w", "win.close-tab"),
             ("<Control>Page_Down", "win.next-tab"),
             ("<Control>Page_Up", "win.prev-tab"),
+            ("<Control>Tab", "win.next-tab"),
+            ("<Control><Shift>ISO_Left_Tab", "win.prev-tab"),
             ("<Control>comma", "win.preferences"),
             ("<Control><Shift>k", "win.quick-switch"),
             ("<Control><Shift>e", "win.toggle-tab-emoji"),
+            ("<Control>period", "win.set-tab-emoji"),  # GNOME's emoji key
             ("F9", "win.toggle-sidebar"),
         ):
             controller.add_shortcut(
@@ -424,15 +459,23 @@ class MainWindow(Adw.ApplicationWindow):
         )
         self._add_tab(tab, GLib.path_get_basename(cwd), f"continue {provider.name} — {cwd}")
 
-    def _add_tab(self, tab: TerminalTab, title: str, tooltip: str) -> Adw.TabPage:
+    def _append_page(self, tab: Gtk.Widget, title: str, tooltip: str,
+                     cwd: str | None, agent: str) -> Adw.TabPage:
+        """Append a tab into the space of its folder and select it."""
         page = self.tab_view.append(tab)
         page.set_title(title)
         page.set_tooltip(tooltip)
-        tab.connect("process-exited", self._on_process_exited, page)
-        tab.terminal.connect("contents-changed", self._on_terminal_output, page)
+        self._page_space[page] = (cwd or str(Path.home()), agent)
+        page.connect("notify::title", lambda *_: self._queue_spaces_refresh())
+        page.connect("notify::needs-attention", lambda *_: self._queue_spaces_refresh())
         self.tab_view.set_selected_page(page)
         self.content_stack.set_visible_child_name("tabs")
-        self._apply_tab_status(page)
+        return page
+
+    def _add_tab(self, tab: TerminalTab, title: str, tooltip: str) -> Adw.TabPage:
+        page = self._append_page(tab, title, tooltip, tab.cwd, tab.provider.id)
+        tab.connect("process-exited", self._on_process_exited, page)
+        tab.connect("agent-state", self._on_agent_state, page)
         GLib.idle_add(tab.grab_terminal_focus)
         return page
 
@@ -471,12 +514,10 @@ class MainWindow(Adw.ApplicationWindow):
         if variant is None:
             return
         tab = ChatSessionTab(cwd=cwd, provider=provider, variant=variant)
-        page = self.tab_view.append(tab)
-        page.set_title(_("Chat — {dir}").format(dir=GLib.path_get_basename(cwd)))
-        page.set_tooltip(f"{provider.name} chat — {cwd}")
-        page.set_icon(_status_icon("open"))
-        self.tab_view.set_selected_page(page)
-        self.content_stack.set_visible_child_name("tabs")
+        self._append_page(
+            tab, _("Chat — {dir}").format(dir=GLib.path_get_basename(cwd)),
+            f"{provider.name} chat — {cwd}", cwd, f"{provider.id} chat",
+        )
 
     def _on_resume_chat_action(self, _action, param: GLib.Variant) -> None:
         variant_key, _, session_id = param.get_string().partition(":")
@@ -491,12 +532,10 @@ class MainWindow(Adw.ApplicationWindow):
         tab = ChatSessionTab(
             cwd=session.cwd, provider=provider, variant=variant, resume_session_id=session_id
         )
-        page = self.tab_view.append(tab)
-        page.set_title(_("Chat — {name}").format(name=self.store.display_name(session)))
-        page.set_tooltip(f"{provider.name} chat — {session.session_id}")
-        page.set_icon(_status_icon("open"))
-        self.tab_view.set_selected_page(page)
-        self.content_stack.set_visible_child_name("tabs")
+        self._append_page(
+            tab, _("Chat — {name}").format(name=self.store.display_name(session)),
+            f"{provider.name} chat — {session.session_id}", session.cwd, f"{provider.id} chat",
+        )
 
     # -- session replay ----------------------------------------------------
 
@@ -507,17 +546,10 @@ class MainWindow(Adw.ApplicationWindow):
 
     def _open_replay(self, session: Session) -> None:
         tab = ReplayTab(session, session.provider)
-        page = self.tab_view.append(tab)
-        page.set_title(_("Replay — {name}").format(name=self.store.display_name(session)))
-        page.set_tooltip(f"replay — {session.project_name} — {session.session_id}")
-        page.set_icon(_status_icon("open"))
-        self.tab_view.set_selected_page(page)
-        self.content_stack.set_visible_child_name("tabs")
-
-    def _apply_tab_status(self, page: Adw.TabPage) -> None:
-        """Mirror the sidebar status dot onto the tab itself."""
-        status = "attention" if page.get_needs_attention() else "open"
-        page.set_icon(_status_icon(status))
+        self._append_page(
+            tab, _("Replay — {name}").format(name=self.store.display_name(session)),
+            f"replay — {session.project_name} — {session.session_id}", session.cwd, "replay",
+        )
 
     def _close_current_tab(self) -> None:
         page = self.tab_view.get_selected_page()
@@ -580,68 +612,137 @@ class MainWindow(Adw.ApplicationWindow):
             return tab.session_id
         return None
 
-    def _on_terminal_output(self, _terminal, page: Adw.TabPage) -> None:
-        if self.tab_view.get_selected_page() is page:
+    # -- agent states ----------------------------------------------------------
+
+    def _on_agent_state(self, _tab, raw: str, page: Adw.TabPage) -> None:
+        """working / blocked / idle from the terminal; an agent that finished
+        while you weren't looking is "done" until you view it (as in herdr)."""
+        previous = self._page_state.get(page, "idle")
+        unseen = page is not self.tab_view.get_selected_page() or not self.is_active()
+        state = raw
+        if raw == "idle" and previous in ("working", "done") and unseen:
+            state = "done"
+        self._set_page_state(page, state)
+        if unseen and state != previous and state in ("done", "blocked"):
+            self._notify_state(page, state)
+
+    def _set_page_state(self, page: Adw.TabPage, state: str) -> None:
+        if self._page_state.get(page) == state:
             return
-        if not page.get_needs_attention():
-            page.set_needs_attention(True)
-            self._apply_tab_status(page)
-            session_id = self._session_id_of(page)
-            if session_id:
-                self._sync_status(session_id)
-        if self.state.get_setting("notify_idle"):
-            self._schedule_idle_notify(page)
+        self._page_state[page] = state
+        page.set_needs_attention(state in ("done", "blocked"))
+        session_id = self._session_id_of(page)
+        if session_id:
+            self._sync_status(session_id)
+        self._queue_spaces_refresh()
+
+    def _mark_seen(self, *_args) -> None:
+        page = self.tab_view.get_selected_page()
+        if page is not None and self.is_active() and self._page_state.get(page) == "done":
+            self._set_page_state(page, "idle")
+
+    def _notify_state(self, page: Adw.TabPage, state: str) -> None:
+        app = self.get_application()
+        if app is None or not self.state.get_setting("notify_idle"):
+            return
+        tab = page.get_child()
+        agent = tab.provider.name if isinstance(tab, TerminalTab) else ""
+        notification = Gio.Notification.new(page.get_title())
+        if state == "blocked":
+            notification.set_body(_("{agent} needs your input.").format(agent=agent))
+        else:
+            notification.set_body(_("{agent} finished.").format(agent=agent))
+        target = self._session_id_of(page) or page.get_title()
+        notification.set_default_action_and_target_value(
+            "app.focus-session", GLib.Variant("s", target)
+        )
+        app.send_notification(target, notification)
 
     def _on_selected_page_changed(self, view: Adw.TabView, _pspec) -> None:
         page = view.get_selected_page()
+        self._queue_spaces_refresh()
         if page is None:
             return
-        self._cancel_idle(page)  # foreground now; no "finished" notification
-        if page.get_needs_attention():
-            page.set_needs_attention(False)
-            self._apply_tab_status(page)
-            session_id = self._session_id_of(page)
-            if session_id:
-                self._sync_status(session_id)
+        if page in self._page_space:
+            self._space_last[self._page_space[page][0]] = page
+        self._mark_seen()
         if isinstance(page.get_child(), TerminalTab):
             GLib.idle_add(page.get_child().grab_terminal_focus)
 
-    # -- idle notifications --------------------------------------------------
-
-    def _schedule_idle_notify(self, page: Adw.TabPage) -> None:
-        self._cancel_idle(page)
-        self._idle_sources[page] = GLib.timeout_add(_IDLE_NOTIFY_MS, self._fire_idle_notify, page)
-
-    def _cancel_idle(self, page: Adw.TabPage) -> None:
-        source = self._idle_sources.pop(page, None)
-        if source is not None:
-            GLib.source_remove(source)
-
-    def _fire_idle_notify(self, page: Adw.TabPage) -> bool:
-        self._idle_sources.pop(page, None)
-        if page is self.tab_view.get_selected_page() or not self.state.get_setting("notify_idle"):
-            return GLib.SOURCE_REMOVE
-        app = self.get_application()
-        if app is not None:
-            session_id = self._session_id_of(page) or ""
-            notification = Gio.Notification.new(page.get_title())
-            notification.set_body("Claude finished responding.")
-            notification.set_default_action_and_target_value(
-                "app.focus-session", GLib.Variant("s", session_id)
-            )
-            app.send_notification(session_id or page.get_title(), notification)
-        return GLib.SOURCE_REMOVE
-
-    def focus_session(self, session_id: str) -> None:
-        page = self._pages.get(session_id)
+    def focus_session(self, target: str) -> None:
+        """Select the tab of a session id (or, for unsaved tabs, a title)."""
+        page = self._pages.get(target) or next(
+            (t.page for t in self._tab_infos() if t.title == target), None
+        )
         if page is not None:
             self.tab_view.set_selected_page(page)
 
-    # -- tab rename / menu ---------------------------------------------------
+    # -- spaces --------------------------------------------------------------
 
-    def _on_tab_setup_menu(self, _view: Adw.TabView, page: Adw.TabPage | None) -> None:
+    def _tab_infos(self) -> list[TabInfo]:
+        infos = []
+        for i in range(self.tab_view.get_n_pages()):
+            page = self.tab_view.get_nth_page(i)
+            space, agent = self._page_space.get(page, (str(Path.home()), ""))
+            state = self._page_state.get(page, "idle")
+            infos.append(TabInfo(page, page.get_title(), space, agent, state, self._tab_emoji(page)))
+        return infos
+
+    def _queue_spaces_refresh(self) -> None:
+        if self._spaces_refresh_source is None:
+            self._spaces_refresh_source = GLib.idle_add(self._refresh_spaces)
+
+    def _refresh_spaces(self) -> bool:
+        self._spaces_refresh_source = None
+        infos = self._tab_infos()
+        selected = self.tab_view.get_selected_page()
+        current = next((t for t in infos if t.page is selected), None)
+        self.spaces_panel.update(infos, current)
+        space = current.space if current else None
+        self.tab_strip.update([t for t in infos if t.space == space], current)
+        return GLib.SOURCE_REMOVE
+
+    def _current_space(self) -> str | None:
+        page = self.tab_view.get_selected_page()
+        return self._page_space[page][0] if page in self._page_space else None
+
+    def _on_select_space(self, _panel, space: str) -> None:
+        page = self._space_last.get(space)
+        if page is None:
+            page = next((t.page for t in self._tab_infos() if t.space == space), None)
         if page is not None:
-            self._menu_page = page
+            self.tab_view.set_selected_page(page)
+
+    def _cycle_space_tab(self, step: int) -> None:
+        space = self._current_space()
+        pages = [t.page for t in self._tab_infos() if t.space == space]
+        selected = self.tab_view.get_selected_page()
+        if len(pages) > 1 and selected in pages:
+            index = (pages.index(selected) + step) % len(pages)
+            self.tab_view.set_selected_page(pages[index])
+
+    def _new_in_space(self) -> None:
+        """The strip's "+": another agent in the current space's folder."""
+        space = self._current_space()
+        if space and Path(space).is_dir():
+            self._start_new_session(space)
+        else:
+            self._choose_new_session_folder()
+
+    def _on_tab_strip_menu(self, _strip, page: Adw.TabPage, widget: Gtk.Widget) -> None:
+        self._menu_page = page
+        popover = Gtk.PopoverMenu.new_from_model(self.tab_menu)
+        popover.set_parent(widget)
+        popover.set_has_arrow(False)
+
+        def on_closed(p: Gtk.PopoverMenu) -> None:
+            # after the chosen action ran
+            GLib.idle_add(lambda: (p.unparent(), setattr(self, "_menu_page", None)))
+
+        popover.connect("closed", on_closed)
+        popover.popup()
+
+    # -- tab rename / menu ---------------------------------------------------
 
     def _rename_tab(self) -> None:
         page = self._menu_page or self.tab_view.get_selected_page()
@@ -661,48 +762,59 @@ class MainWindow(Adw.ApplicationWindow):
             lambda name: page.set_title(name.strip() or page.get_title()),
         )
 
-    def _set_tab_emoji(self) -> None:
-        page = self._menu_page or self.tab_view.get_selected_page()
+    def _set_tab_emoji(self, page: Adw.TabPage | None = None) -> None:
+        """Open the emoji picker at the tab; a pick applies at once."""
+        page = page or self._menu_page or self.tab_view.get_selected_page()
         if page is None:
             return
-        session_id = self._session_id_of(page)
-        if session_id:
-            current = self.state.get_emoji(session_id) or ""
-
-            def save(emoji: str) -> None:
-                self.state.set_emoji(session_id, emoji.strip())
-                session = self.store.get_session(session_id)
-                if session is not None:
-                    page.set_title(self._tab_title(session))
-
-            dialogs.emoji_dialog(self, current, save)
-        else:  # fork / new tab: no persisted session, set a local prefix
-            base = self._base_titles.get(page, page.get_title())
-            self._base_titles[page] = base
-
-            def save(emoji: str) -> None:
-                emoji = emoji.strip()
-                page.set_title(f"{emoji} {base}" if emoji else base)
-
-            dialogs.emoji_dialog(self, "", save)
+        chooser = Gtk.EmojiChooser()
+        if self._tab_emoji(page):
+            _add_remove_button(chooser, lambda: self._apply_tab_emoji(page, ""))
+        # Parent on the strip, not the tab button: the strip rebuilds its
+        # buttons on every agent-state change, which would orphan the picker.
+        chooser.set_parent(self.tab_strip)
+        bounds = self.tab_strip.tab_bounds(page)
+        if bounds is not None:
+            chooser.set_pointing_to(bounds)
+        chooser.connect("emoji-picked", lambda _c, text: self._apply_tab_emoji(page, text))
+        chooser.connect("closed", lambda c: GLib.idle_add(c.unparent))
+        chooser.popup()
 
     def _toggle_tab_emoji(self) -> None:
         """Ctrl+Shift+E: toggle a 😊 marker on the current tab — no menu."""
         page = self.tab_view.get_selected_page()
-        if page is None:
-            return
-        smile = "😊"
+        if page is not None:
+            self._apply_tab_emoji(page, "😊")
+
+    def _remove_tab_emoji(self) -> None:
+        page = self._menu_page or self.tab_view.get_selected_page()
+        if page is not None:
+            self._apply_tab_emoji(page, "")
+
+    def _tab_emoji(self, page: Adw.TabPage) -> str:
+        """The emoji a tab currently shows ('' if none)."""
         session_id = self._session_id_of(page)
         if session_id:
-            current = self.state.get_emoji(session_id) or ""
-            self.state.set_emoji(session_id, "" if current == smile else smile)
+            return self.state.get_emoji(session_id) or ""
+        base = self._base_titles.get(page)  # fork / new tab: a local title prefix
+        title = page.get_title()
+        if base is None or title == base or not title.endswith(base):
+            return ""
+        return title[: -len(base)].strip()
+
+    def _apply_tab_emoji(self, page: Adw.TabPage, emoji: str) -> None:
+        """Set a tab's one emoji (replacing any other); picking the one it
+        already has removes it."""
+        emoji = "" if emoji == self._tab_emoji(page) else emoji
+        session_id = self._session_id_of(page)
+        if session_id:
+            self.state.set_emoji(session_id, emoji)
             session = self.store.get_session(session_id)
             if session is not None:
                 page.set_title(self._tab_title(session))
-        else:  # fork / new tab: toggle a local title prefix
-            base = self._base_titles.get(page, page.get_title())
-            self._base_titles[page] = base
-            page.set_title(base if page.get_title() != base else f"{smile} {base}")
+            return
+        base = self._base_titles.setdefault(page, page.get_title())
+        page.set_title(f"{emoji} {base}" if emoji else base)
 
     def _copy_tab_session_id(self) -> None:
         page = self._menu_page or self.tab_view.get_selected_page()
@@ -734,7 +846,9 @@ class MainWindow(Adw.ApplicationWindow):
         self._confirmed_closes.discard(page)
         self._closing_pages.pop(page, None)
         self._base_titles.pop(page, None)
-        self._cancel_idle(page)
+        self._page_space.pop(page, None)
+        self._page_state.pop(page, None)
+        self._space_last = {k: v for k, v in self._space_last.items() if v is not page}
         session_id = self._session_id_of(page)
         if session_id:
             self._pages.pop(session_id, None)
@@ -946,10 +1060,13 @@ class MainWindow(Adw.ApplicationWindow):
         self._switcher.present(self)
 
     def _show_preferences(self) -> None:
-        PreferencesDialog(self.state, self._apply_preferences).present(self)
+        PreferencesDialog(self.state, self.apply_preferences).present(self)
 
-    def _apply_preferences(self) -> None:
+    def apply_preferences(self) -> None:
+        themes.apply_ui_style(self.state.settings)
         self._apply_settings_to_tabs()
+        self.spaces_panel.apply_sections()
+        self.sidebar.apply_sections()
         self.sidebar.refresh_folder_path()
 
     def _apply_settings_to_tabs(self) -> None:

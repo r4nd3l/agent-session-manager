@@ -211,6 +211,72 @@ msgstr "Megjelenés"
 msgid "Color scheme"
 msgstr "Színséma"
 
+msgid "Sidebar"
+msgstr "Oldalsáv"
+
+msgid "Which sections the sidebar shows"
+msgstr "Mely szakaszok jelenjenek meg az oldalsávon"
+
+msgid "Spaces"
+msgstr "Munkaterek"
+
+msgid "Project folders with open tabs"
+msgstr "Projektmappák nyitott fülekkel"
+
+msgid "Agents"
+msgstr "Agentek"
+
+msgid "Every running agent, across spaces"
+msgstr "Minden futó agent, munkaterektől függetlenül"
+
+msgid "History"
+msgstr "Előzmények"
+
+msgid "Past sessions, with search and favorites"
+msgstr "Korábbi munkamenetek, kereséssel és kedvencekkel"
+
+msgid "Main menu"
+msgstr "Főmenü"
+
+msgid "Change emoji"
+msgstr "Emoji módosítása"
+
+msgid "Remove emoji"
+msgstr "Emoji eltávolítása"
+
+msgid "new"
+msgstr "új"
+
+msgid "menu"
+msgstr "menü"
+
+msgid "spaces"
+msgstr "munkaterek"
+
+msgid "agents"
+msgstr "agentek"
+
+msgid "history"
+msgstr "előzmények"
+
+msgid "no open spaces"
+msgstr "nincs nyitott munkatér"
+
+msgid "New space: start an agent in a folder"
+msgstr "Új munkatér: agent indítása egy mappában"
+
+msgid "New agent in this space"
+msgstr "Új agent ebben a munkatérben"
+
+msgid "Interface style"
+msgstr "Felület stílusa"
+
+msgid "Terminal workspace"
+msgstr "Terminál-munkatér"
+
+msgid "Classic (Adwaita)"
+msgstr "Klasszikus (Adwaita)"
+
 msgid "Language"
 msgstr "Nyelv"
 
@@ -220,11 +286,17 @@ msgstr "Újraindítás szükséges"
 msgid "Notifications"
 msgstr "Értesítések"
 
-msgid "Notify when a session goes idle"
-msgstr "Értesítés, ha egy munkamenet tétlenné válik"
+msgid "Notify about background agents"
+msgstr "Értesítés a háttérben futó agentekről"
 
-msgid "Desktop notification when a background tab stops producing output"
-msgstr "Asztali értesítés, amikor egy háttérlap abbahagyja a kimenet előállítását"
+msgid "Desktop notification when an agent you are not watching finishes or needs your input"
+msgstr "Asztali értesítés, ha egy nem figyelt agent végez vagy a válaszodra vár"
+
+msgid "{agent} needs your input."
+msgstr "{agent} a válaszodra vár."
+
+msgid "{agent} finished."
+msgstr "{agent} végzett."
 
 msgid "Claude is waiting for your reply"
 msgstr "A Claude a válaszodra vár"

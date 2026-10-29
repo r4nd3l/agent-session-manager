@@ -15,7 +15,7 @@ from gi.repository import Adw, Gio, Gtk, Pango  # noqa: E402
 
 from .i18n import LANGUAGES, N_, _
 from .state import AppState
-from .themes import DEFAULT_THEME, THEME_NAMES, get_theme
+from .themes import DEFAULT_THEME, DEFAULT_UI_STYLE, THEME_NAMES, get_theme
 
 
 def _hex_rgb(hex6: str) -> tuple[float, float, float]:
@@ -63,6 +63,12 @@ _SCHEMES = [
 ]
 
 
+_UI_STYLE_LABELS = [
+    ("tui", N_("Terminal workspace")),
+    ("classic", N_("Classic (Adwaita)")),
+]
+
+
 def apply_color_scheme(value: str) -> None:
     for key, _label, scheme in _SCHEMES:
         if key == value:
@@ -104,6 +110,37 @@ class PreferencesDialog(Adw.PreferencesDialog):
         scroll_row.connect("notify::value", self._on_scrollback_changed)
         terminal_group.add(scroll_row)
 
+        page.add(terminal_group)
+
+        appearance_group = Adw.PreferencesGroup(title=_("Appearance"))
+        scheme_row = Adw.ComboRow(title=_("Color scheme"))
+        scheme_row.set_model(Gtk.StringList.new([_(label) for _k, label, _s in _SCHEMES]))
+        current_scheme = state.get_setting("color_scheme") or "system"
+        scheme_row.set_selected(
+            next((i for i, (k, _l, _s) in enumerate(_SCHEMES) if k == current_scheme), 0)
+        )
+        scheme_row.connect("notify::selected", self._on_scheme_changed)
+        appearance_group.add(scheme_row)
+        current_style = state.get_setting("ui_style") or DEFAULT_UI_STYLE
+        style_labels = dict(_UI_STYLE_LABELS)
+        self._style_expander = Adw.ExpanderRow(
+            title=_("Interface style"), subtitle=_(style_labels[current_style])
+        )
+        style_group = None
+        for key, label in _UI_STYLE_LABELS:
+            row = Adw.ActionRow(title=_(label))
+            radio = Gtk.CheckButton()
+            if style_group is None:
+                style_group = radio
+            else:
+                radio.set_group(style_group)
+            radio.set_active(key == current_style)
+            radio.connect("toggled", self._on_style_radio, key, label)
+            row.add_prefix(radio)
+            row.set_activatable_widget(radio)
+            self._style_expander.add_row(row)
+        appearance_group.add(self._style_expander)
+
         current_theme = state.get_setting("terminal_theme") or DEFAULT_THEME
         if current_theme not in THEME_NAMES:
             current_theme = DEFAULT_THEME
@@ -122,21 +159,23 @@ class PreferencesDialog(Adw.PreferencesDialog):
             row.set_activatable_widget(radio)
             row.add_suffix(_theme_swatch(name))
             self._theme_expander.add_row(row)
-        terminal_group.add(self._theme_expander)
-        page.add(terminal_group)
-
-        appearance_group = Adw.PreferencesGroup(title=_("Appearance"))
-        scheme_row = Adw.ComboRow(title=_("Color scheme"))
-        scheme_row.set_model(Gtk.StringList.new([_(label) for _k, label, _s in _SCHEMES]))
-        current_scheme = state.get_setting("color_scheme") or "system"
-        scheme_row.set_selected(
-            next((i for i, (k, _l, _s) in enumerate(_SCHEMES) if k == current_scheme), 0)
-        )
-        scheme_row.connect("notify::selected", self._on_scheme_changed)
-        appearance_group.add(scheme_row)
+        appearance_group.add(self._theme_expander)
         page.add(appearance_group)
 
-        sidebar_group = Adw.PreferencesGroup(title=_("Session list"))
+        sidebar_group = Adw.PreferencesGroup(
+            title=_("Sidebar"), description=_("Which sections the sidebar shows")
+        )
+        for key, title, subtitle in (
+            ("spaces", _("Spaces"), _("Project folders with open tabs")),
+            ("agents", _("Agents"), _("Every running agent, across spaces")),
+            ("history", _("History"), _("Past sessions, with search and favorites")),
+        ):
+            row = Adw.ActionRow(title=title, subtitle=subtitle)
+            check = Gtk.CheckButton(active=bool(state.get_setting(f"sidebar_show_{key}")))
+            check.connect("toggled", self._on_section_toggled, key)
+            row.add_prefix(check)
+            row.set_activatable_widget(check)
+            sidebar_group.add(row)
         self._folder_path_row = Adw.SwitchRow(
             title=_("Show folder path"),
             subtitle=_("Show each session's project folder path in the sidebar"),
@@ -176,8 +215,10 @@ class PreferencesDialog(Adw.PreferencesDialog):
 
         notif_group = Adw.PreferencesGroup(title=_("Notifications"))
         self._notify_row = Adw.SwitchRow(
-            title=_("Notify when a session goes idle"),
-            subtitle=_("Desktop notification when a background tab stops producing output"),
+            title=_("Notify about background agents"),
+            subtitle=_(
+                "Desktop notification when an agent you are not watching finishes or needs your input"
+            ),
         )
         self._notify_row.set_active(bool(state.get_setting("notify_idle")))
         self._notify_row.connect("notify::active", self._on_notify_changed)
@@ -207,6 +248,13 @@ class PreferencesDialog(Adw.PreferencesDialog):
         self._theme_expander.set_subtitle(name)
         self._on_change()
 
+    def _on_style_radio(self, radio: Gtk.CheckButton, key: str, label: str) -> None:
+        if not radio.get_active():
+            return
+        self._state.set_setting("ui_style", key)
+        self._style_expander.set_subtitle(_(label))
+        self._on_change()
+
     def _on_scheme_changed(self, row: Adw.ComboRow, _pspec) -> None:
         key = _SCHEMES[row.get_selected()][0]
         self._state.set_setting("color_scheme", key)
@@ -215,6 +263,10 @@ class PreferencesDialog(Adw.PreferencesDialog):
 
     def _on_notify_changed(self, row: Adw.SwitchRow, _pspec) -> None:
         self._state.set_setting("notify_idle", row.get_active())
+        self._on_change()
+
+    def _on_section_toggled(self, check: Gtk.CheckButton, key: str) -> None:
+        self._state.set_setting(f"sidebar_show_{key}", check.get_active())
         self._on_change()
 
     def _on_folder_path_changed(self, row: Adw.SwitchRow, _pspec) -> None:

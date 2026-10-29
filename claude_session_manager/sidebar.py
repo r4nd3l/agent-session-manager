@@ -1,4 +1,5 @@
-"""Session sidebar: search, project accordion, favorites, selection mode.
+"""Session sidebar: the spaces panel on top, then the session history
+(search, project accordion, favorites, selection mode).
 
 Rows bind to SessionItem properties, so renames/stars/status changes update
 in place; the list is only rebuilt when the store reports an order change.
@@ -24,6 +25,7 @@ from .formatting import format_size
 from .i18n import _
 from .models import FAV_GROUP, SessionItem
 from .providers import get_provider
+from .spaces import SectionHeader, section_shown
 from .store import SessionStore
 
 _GHOSTTY = shutil.which("ghostty")
@@ -240,8 +242,10 @@ class SessionSidebar(Gtk.Box):
         "trash-many": (GObject.SignalFlags.RUN_FIRST, None, (object,)),
     }
 
-    def __init__(self, store: SessionStore) -> None:
+    def __init__(self, store: SessionStore, top: Gtk.Widget | None = None,
+                 menu: Gio.MenuModel | None = None) -> None:
         super().__init__(orientation=Gtk.Orientation.VERTICAL)
+        self.add_css_class("app-sidebar")
         self.store = store
         self._view = Adw.ToolbarView(vexpand=True)
         self.append(self._view)
@@ -255,32 +259,39 @@ class SessionSidebar(Gtk.Box):
 
         store.connect("refreshed", self._on_store_refreshed)
 
-        # -- header ---------------------------------------------------------
+        # -- header: the app menu (cog) at the top of the window ----------------
         header = Adw.HeaderBar()
         # The content header (right pane) carries the window controls; without
         # AdwOverlaySplitView coordinating the two bars, hide them here so they
         # aren't duplicated at the pane boundary.
         header.set_show_end_title_buttons(False)
-        header.set_title_widget(Adw.WindowTitle(title=_("Sessions")))
+        header.set_title_widget(Gtk.Label())
+        if menu is not None:
+            menu_btn = Gtk.MenuButton(icon_name="emblem-system-symbolic", menu_model=menu)
+            menu_btn.set_tooltip_text(_("Main menu"))
+            header.pack_end(menu_btn)
+        self._view.add_top_bar(header)
+        if top is not None:  # spaces / agents panel
+            self._view.add_top_bar(top)
 
+        # -- history section title ---------------------------------------------
         self.select_btn = Gtk.ToggleButton(icon_name="object-select-symbolic")
+        self.select_btn.add_css_class("flat")
         self.select_btn.set_tooltip_text(_("Select sessions"))
         self.select_btn.connect("toggled", lambda b: self._set_selection_mode(b.get_active()))
-        header.pack_start(self.select_btn)
-
-        menu = Gio.Menu()
-        menu.append(_("Open session file…"), "win.open-session-file")
-        menu.append(_("Show hidden sessions"), "win.show-hidden")
-        menu.append(_("MCP servers"), "win.mcp-servers")
-        menu.append(_("Preferences"), "win.preferences")
-        menu.append(_("About Agent Session Manager"), "win.about")
-        header.pack_end(Gtk.MenuButton(icon_name="open-menu-symbolic", menu_model=menu))
 
         refresh_btn = Gtk.Button(icon_name="view-refresh-symbolic")
+        refresh_btn.add_css_class("flat")
         refresh_btn.set_tooltip_text(_("Refresh session list"))
         refresh_btn.set_action_name("win.refresh")
-        header.pack_end(refresh_btn)
-        self._view.add_top_bar(header)
+
+        history_actions = Gtk.Box(spacing=2)
+        history_actions.append(self.select_btn)
+        history_actions.append(refresh_btn)
+        self._history_header = SectionHeader(
+            "history", _("history"), store.state, self.apply_sections, history_actions
+        )
+        self._view.add_top_bar(self._history_header)
 
         # -- search + accordion controls --------------------------------------
         self.search_entry = Gtk.SearchEntry(placeholder_text=_("Search sessions…"), hexpand=True)
@@ -296,7 +307,7 @@ class SessionSidebar(Gtk.Box):
         expand_all.set_tooltip_text(_("Expand all groups"))
         expand_all.connect("clicked", lambda *_: self._set_all_collapsed(False))
 
-        search_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=2)
+        self._search_box = search_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=2)
         search_box.set_margin_start(8)
         search_box.set_margin_end(8)
         search_box.set_margin_bottom(6)
@@ -338,6 +349,7 @@ class SessionSidebar(Gtk.Box):
         self.footer.set_margin_bottom(6)
         self.footer.set_ellipsize(_ELLIPSIZE_END)
         self._view.add_bottom_bar(self.footer)
+        self.apply_sections()
 
         # Populate from whatever the shared store already holds (a sibling
         # window may have triggered the scan before this sidebar connected).
@@ -369,6 +381,14 @@ class SessionSidebar(Gtk.Box):
         if open_tabs:
             parts.append(_("{n} open").format(n=open_tabs))
         self.footer.set_label(" · ".join(parts))
+
+    def apply_sections(self) -> None:
+        """Show / fold the history section per the preferences and title clicks."""
+        shown = section_shown(self.store.state, "history")
+        body = shown and not self._history_header.collapsed
+        self._history_header.set_visible(shown)
+        for widget in (self._search_box, self._content_stack, self.action_bar, self.footer):
+            widget.set_visible(body)
 
     def refresh_folder_path(self) -> None:
         """Re-read the 'show folder path' setting and update existing rows."""
