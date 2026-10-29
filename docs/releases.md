@@ -20,14 +20,46 @@ downloads of each version, see the
 - ✅ **Session replay** — step through a transcript as native chat bubbles
 - ✅ **Prompt cards** — answer the agent's questions with native option cards over the terminal
 - ✅ **Distribution** — PyPI, AUR, Ubuntu PPA, `.deb`, one-step tag-driven releases
+- ✅ **Terminal workspace** — spaces, per-space tabs, split panes, agent states, a `Ctrl+B` prefix, and a herdr-style look with theme variants
 
 ### Exploring next
 
+- 🔭 **Agents in split panes** — start an agent (not just a shell) in a pane, with its own state
+- 🔭 **Persistent spaces** — keep a space and its layout when its last tab closes, and restore them on restart
 - 🔭 **More agents** — additional provider adapters beyond Claude Code and Cursor
-- 🔭 **Chat polish** — per-message copy, code syntax highlighting, model picker in the compose bar
 - 🔭 **Flathub** distribution
 
 ## Changelog
+
+### v1.1.0 — Terminal workspace
+
+The app now works like a terminal workspace for agents, inspired by
+[herdr](https://herdr.dev). The previous look stays available as the
+*Classic (Adwaita)* interface style.
+
+- **Spaces**: each project folder with open tabs is a space, shown in the
+  sidebar with its git branch. Tabs are per space, and the tab strip's **+**
+  starts another agent in the same folder.
+- **Agents list and states**: every running agent with a status dot:
+  **working**, **blocked** (waiting on an approval or a question), **done**
+  (finished while you weren't looking), or **idle**, rolled up to its space.
+  Detected from Claude Code's terminal title and screen and from Cursor's
+  prompts. Notifications fire when an unwatched agent finishes or needs you.
+- **Split panes**: shell panes next to the agent, right or down, with
+  focus moves, zoom, and close.
+- **`Ctrl+B` prefix** with herdr's default keys for panes, tabs, spaces, the
+  sidebar, and preferences; `Ctrl+B ?` lists them.
+- **Go to agent** picker (`Ctrl+B g`): every running agent, grouped by space,
+  filterable by state.
+- **Terminal-workspace look**: Catppuccin by default (matching herdr), with
+  Tokyo Night, Gruvbox, Nord, Dracula and other variants coloring the whole
+  window; framed terminals labelled with their agent.
+- **Sidebar**: spaces, agents, and history sections, each foldable and
+  switchable in Preferences; the app menu is a ⚙ at the top.
+- **Tab emoji picker**: `Ctrl+.` or a click on a tab's emoji opens the picker
+  at the tab; one emoji per tab, with a remove button.
+- Fixed: the active-tab highlight in the classic style; focus returning to the
+  terminal after the quick switcher closes.
 
 ### v1.0.0 — Native chat, replay & richer sessions
 

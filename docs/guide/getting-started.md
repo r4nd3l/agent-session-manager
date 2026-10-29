@@ -88,10 +88,16 @@ To add a desktop launcher and icon for your user:
 
 ## First run
 
-On first launch the sidebar lists every session found on disk (for Claude Code,
-under `~/.claude/projects/`), with all groups collapsed. Expand a project, click
-a session, and it opens in a terminal tab that resumes it. If you haven't used a
-supported agent yet, run `claude` in a project once and the session will show up
-automatically.
+On first launch the **history** section lists every session found on disk
+(for Claude Code, under `~/.claude/projects/`), grouped by project. Click a
+session to resume it in a terminal tab; its project folder shows up under
+**spaces**, and the agent under **agents**. To start something new, press the
+**+** next to *spaces* and pick a folder.
 
-![The main window on first run](/img/main-window.png)
+If you haven't used a supported agent yet, run `claude` in a project once and
+the session will show up automatically.
+
+![The main window](/img/main-window.png)
+
+Press `Ctrl+B ?` for the keyboard commands, and see
+[Features](/guide/features) for the full tour.

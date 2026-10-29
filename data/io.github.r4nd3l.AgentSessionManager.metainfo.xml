@@ -9,18 +9,19 @@
 
   <description>
     <p>
-      A native desktop companion for AI coding-agent CLIs such as Claude Code and
-      Cursor. Browse every session on your machine in a sidebar grouped by project,
-      give sessions custom names, star favorites, and resume any of them in embedded
-      terminal tabs.
+      A native terminal workspace for AI coding-agent CLIs such as Claude Code and
+      Cursor. Run agents side by side in spaces, tabs, and split panes, see at a
+      glance which one is working, blocked, or done, and resume any past session
+      from a searchable history.
     </p>
     <p>Features:</p>
     <ul>
-      <li>Sessions grouped by project with favorites, search, and live updates</li>
-      <li>Tabbed embedded terminals resuming sessions in their project directory</li>
-      <li>Attention indicators when a background session produces output</li>
+      <li>Spaces per project folder, with per-space tabs and split panes</li>
+      <li>Agent states: working, blocked, done, or idle, with notifications</li>
+      <li>A Ctrl+B prefix for panes, tabs, spaces, and a go-to-agent picker</li>
+      <li>Session history grouped by project, with favorites, search, and live updates</li>
       <li>Session details: message counts, models, token usage</li>
-      <li>Bulk selection for opening, starring, hiding, or trashing sessions</li>
+      <li>Catppuccin terminal-workspace look with theme variants, or classic Adwaita</li>
     </ul>
     <p>
       Unofficial community tool — not affiliated with or endorsed by Anthropic.
@@ -34,13 +35,25 @@
     <name>Máté Molnár</name>
   </developer>
 
-  <url type="homepage">https://github.com/r4nd3l/claude-session-manager</url>
-  <url type="bugtracker">https://github.com/r4nd3l/claude-session-manager/issues</url>
-  <url type="vcs-browser">https://github.com/r4nd3l/claude-session-manager</url>
+  <url type="homepage">https://r4nd3l.github.io/agent-session-manager/</url>
+  <url type="bugtracker">https://github.com/r4nd3l/agent-session-manager/issues</url>
+  <url type="vcs-browser">https://github.com/r4nd3l/agent-session-manager</url>
 
   <content_rating type="oars-1.1"/>
 
   <releases>
+    <release version="1.1.0" date="2026-10-29">
+      <description>
+        <p>Terminal workspace: spaces, agent states, split panes, and a Ctrl+B prefix.</p>
+        <ul>
+          <li>Spaces per project folder with per-space tabs and an agents list</li>
+          <li>Agent states (working / blocked / done / idle) with notifications</li>
+          <li>Split panes and a Ctrl+B prefix with a go-to-agent picker</li>
+          <li>Catppuccin terminal-workspace look with theme variants; classic style kept</li>
+          <li>Foldable, switchable sidebar sections and a tab emoji picker</li>
+        </ul>
+      </description>
+    </release>
     <release version="1.0.0" date="2026-06-21">
       <description>
         <p>Native chat, session replay, and richer session management.</p>

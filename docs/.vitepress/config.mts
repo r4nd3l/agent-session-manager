@@ -3,14 +3,14 @@ import { defineConfig } from 'vitepress'
 // https://vitepress.dev/reference/site-config
 export default defineConfig({
   title: 'Agent Session Manager',
-  description: 'A native Linux home for your AI coding-agent sessions.',
+  description: 'A native Linux terminal workspace for your AI coding agents.',
   lang: 'en-US',
   base: '/agent-session-manager/',
   lastUpdated: true,
   cleanUrls: true,
 
   head: [
-    ['meta', { name: 'theme-color', content: '#D97757' }],
+    ['meta', { name: 'theme-color', content: '#cba6f7' }],
     ['meta', { property: 'og:type', content: 'website' }],
     ['meta', { property: 'og:title', content: 'Agent Session Manager' }],
     ['meta', {

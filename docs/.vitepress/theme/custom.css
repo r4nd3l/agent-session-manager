@@ -1,13 +1,13 @@
-/* Brand accent */
+/* Brand accent: Catppuccin mauve, the app's default accent (Latte / Mocha) */
 :root {
-  --vp-c-brand-1: #c2410c;
-  --vp-c-brand-2: #d97757;
-  --vp-c-brand-3: #d97757;
+  --vp-c-brand-1: #8839ef;
+  --vp-c-brand-2: #7287fd;
+  --vp-c-brand-3: #8839ef;
 }
 .dark {
-  --vp-c-brand-1: #e8927c;
-  --vp-c-brand-2: #d97757;
-  --vp-c-brand-3: #d97757;
+  --vp-c-brand-1: #cba6f7;
+  --vp-c-brand-2: #b4befe;
+  --vp-c-brand-3: #8839ef;
 }
 
 /* Let the hero screenshot render large instead of being boxed into the

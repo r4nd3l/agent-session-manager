@@ -1,3 +1,18 @@
+agent-session-manager (1.1.0) noble; urgency=medium
+
+  * Terminal workspace, inspired by herdr: spaces (project folders with
+    their git branch), per-space tabs, and an agents list in the sidebar.
+  * Agent states (working / blocked / done / idle) detected from Claude
+    Code's terminal title and screen and from Cursor's prompts, rolled up to
+    spaces; notifications when an unwatched agent finishes or needs input.
+  * Split panes (shell panes next to the agent) and a Ctrl+B prefix with
+    herdr's default keys; a go-to-agent picker.
+  * Terminal-workspace look in Catppuccin by default with theme variants;
+    the previous look stays as the Classic (Adwaita) style.
+  * Foldable, switchable sidebar sections; a tab emoji picker.
+
+ -- Máté Molnár <matemiller992@gmail.com>  Thu, 29 Oct 2026 16:36:45 +0100
+
 agent-session-manager (1.0.0) noble; urgency=medium
 
   * Native streaming chat (Claude) with token-by-token output and interactive
