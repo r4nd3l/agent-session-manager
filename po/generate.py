@@ -141,8 +141,12 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "Restart to apply": "Újraindítás szükséges",
         "Notifications": "Értesítések",
         "Notify about background agents": "Értesítés a háttérben futó agentekről",
-        "Desktop notification when an agent you are not watching finishes or needs your input":
-            "Asztali értesítés, ha egy nem figyelt agent végez vagy a válaszodra vár",
+        "A notice when an agent you are not watching finishes or needs your input":
+            "Értesítés, ha egy nem figyelt agent végez vagy a válaszodra vár",
+        "Play a sound": "Hang lejátszása",
+        "When an agent you are not watching finishes or needs your input":
+            "Ha egy nem figyelt agent végez vagy a válaszodra vár",
+        "Show": "Megnyitás",
         "{agent} needs your input.": "{agent} a válaszodra vár.",
         "{agent} finished.": "{agent} végzett.",
         "Claude is waiting for your reply": "A Claude a válaszodra vár",
@@ -387,9 +391,13 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "Restart to apply": "Neustart erforderlich",
         "Notifications": "Benachrichtigungen",
         "Notify about background agents": "Über Agenten im Hintergrund benachrichtigen",
-        "Desktop notification when an agent you are not watching finishes or needs your input":
-            "Desktop-Benachrichtigung, wenn ein nicht beobachteter Agent fertig ist "
+        "A notice when an agent you are not watching finishes or needs your input":
+            "Hinweis, wenn ein nicht beobachteter Agent fertig ist "
             "oder deine Eingabe braucht",
+        "Play a sound": "Ton abspielen",
+        "When an agent you are not watching finishes or needs your input":
+            "Wenn ein nicht beobachteter Agent fertig ist oder deine Eingabe braucht",
+        "Show": "Anzeigen",
         "{agent} needs your input.": "{agent} braucht deine Eingabe.",
         "{agent} finished.": "{agent} ist fertig.",
         "Claude is waiting for your reply": "Claude wartet auf deine Antwort",
@@ -637,9 +645,13 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "Restart to apply": "Reinicia para aplicar",
         "Notifications": "Notificaciones",
         "Notify about background agents": "Notificar sobre agentes en segundo plano",
-        "Desktop notification when an agent you are not watching finishes or needs your input":
-            "Notificación de escritorio cuando un agente que no estás mirando termina "
+        "A notice when an agent you are not watching finishes or needs your input":
+            "Aviso cuando un agente que no estás mirando termina "
             "o necesita tu respuesta",
+        "Play a sound": "Reproducir un sonido",
+        "When an agent you are not watching finishes or needs your input":
+            "Cuando un agente que no estás mirando termina o necesita tu respuesta",
+        "Show": "Mostrar",
         "{agent} needs your input.": "{agent} necesita tu respuesta.",
         "{agent} finished.": "{agent} terminó.",
         "Claude is waiting for your reply": "Claude está esperando tu respuesta",
@@ -886,8 +898,12 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "Restart to apply": "Redémarrer pour appliquer",
         "Notifications": "Notifications",
         "Notify about background agents": "Notifier pour les agents en arrière-plan",
-        "Desktop notification when an agent you are not watching finishes or needs your input":
-            "Notification de bureau lorsqu’un agent que vous ne regardez pas termine ou attend votre réponse",
+        "A notice when an agent you are not watching finishes or needs your input":
+            "Avis lorsqu’un agent que vous ne regardez pas termine ou attend votre réponse",
+        "Play a sound": "Jouer un son",
+        "When an agent you are not watching finishes or needs your input":
+            "Lorsqu’un agent que vous ne regardez pas termine ou attend votre réponse",
+        "Show": "Afficher",
         "{agent} needs your input.": "{agent} attend votre réponse.",
         "{agent} finished.": "{agent} a terminé.",
         "Claude is waiting for your reply": "Claude attend votre réponse",

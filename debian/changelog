@@ -1,3 +1,12 @@
+agent-session-manager (1.1.1) noble; urgency=medium
+
+  * Notifications like herdr's: a sound when an unwatched agent finishes or
+    needs your input, an in-app toast while you're in the window, and a
+    desktop notification otherwise; a separate "Play a sound" switch.
+  * Fix desktop notifications never being shown (unsupported PyGObject call).
+
+ -- Máté Molnár <matemiller992@gmail.com>  Fri, 30 Oct 2026 09:41:41 +0100
+
 agent-session-manager (1.1.0) noble; urgency=medium
 
   * Terminal workspace, inspired by herdr: spaces (project folders with

@@ -367,8 +367,17 @@ msgstr "Értesítések"
 msgid "Notify about background agents"
 msgstr "Értesítés a háttérben futó agentekről"
 
-msgid "Desktop notification when an agent you are not watching finishes or needs your input"
-msgstr "Asztali értesítés, ha egy nem figyelt agent végez vagy a válaszodra vár"
+msgid "A notice when an agent you are not watching finishes or needs your input"
+msgstr "Értesítés, ha egy nem figyelt agent végez vagy a válaszodra vár"
+
+msgid "Play a sound"
+msgstr "Hang lejátszása"
+
+msgid "When an agent you are not watching finishes or needs your input"
+msgstr "Ha egy nem figyelt agent végez vagy a válaszodra vár"
+
+msgid "Show"
+msgstr "Megnyitás"
 
 msgid "{agent} needs your input."
 msgstr "{agent} a válaszodra vár."

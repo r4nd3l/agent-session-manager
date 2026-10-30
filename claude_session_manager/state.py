@@ -35,6 +35,7 @@ DEFAULT_SETTINGS = {
     "ui_style": "tui",  # tui (terminal-workspace look) | classic (plain libadwaita)
     "language": "",  # UI language code; "" = follow the system locale
     "notify_idle": True,  # notify when a background session goes quiet
+    "notify_sound": True,  # play a sound when a background agent finishes / gets blocked
     "new_session_dir": "",  # remembered folder for new sessions (empty = ask)
     "sidebar_width": 300,  # persisted sidebar pane width in px
     # sidebar sections: shown at all (preferences) / folded up (click the title)

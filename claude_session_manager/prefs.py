@@ -217,12 +217,22 @@ class PreferencesDialog(Adw.PreferencesDialog):
         self._notify_row = Adw.SwitchRow(
             title=_("Notify about background agents"),
             subtitle=_(
-                "Desktop notification when an agent you are not watching finishes or needs your input"
+                "A notice when an agent you are not watching finishes or needs your input"
             ),
         )
         self._notify_row.set_active(bool(state.get_setting("notify_idle")))
         self._notify_row.connect("notify::active", self._on_notify_changed)
         notif_group.add(self._notify_row)
+        sound_row = Adw.SwitchRow(
+            title=_("Play a sound"),
+            subtitle=_("When an agent you are not watching finishes or needs your input"),
+        )
+        sound_row.set_active(bool(state.get_setting("notify_sound")))
+        sound_row.connect(
+            "notify::active",
+            lambda row, _p: self._state.set_setting("notify_sound", row.get_active()),
+        )
+        notif_group.add(sound_row)
         page.add(notif_group)
 
         self.add(page)

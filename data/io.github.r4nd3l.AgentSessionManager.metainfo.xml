@@ -42,6 +42,16 @@
   <content_rating type="oars-1.1"/>
 
   <releases>
+    <release version="1.1.1" date="2026-10-30">
+      <description>
+        <p>Agent notifications with sound and in-app toasts.</p>
+        <ul>
+          <li>A sound and a notice when an unwatched agent finishes or needs your input</li>
+          <li>In-app toast while the window is focused, desktop notification otherwise</li>
+          <li>Fix desktop notifications never being shown</li>
+        </ul>
+      </description>
+    </release>
     <release version="1.1.0" date="2026-10-29">
       <description>
         <p>Terminal workspace: spaces, agent states, split panes, and a Ctrl+B prefix.</p>

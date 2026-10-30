@@ -31,6 +31,14 @@ downloads of each version, see the
 
 ## Changelog
 
+### v1.1.1 — Agent notifications
+
+- **Notifications like herdr's**: when an agent you aren't watching finishes
+  or needs your input, you hear a sound and get a notice: an in-app toast
+  with a **Show** button while you're in the window, a desktop notification
+  otherwise. The sound has its own switch in **Preferences → Notifications**.
+- **Fix**: desktop notifications were never shown on some PyGObject versions.
+
 ### v1.1.0 — Terminal workspace
 
 The app now works like a terminal workspace for agents, inspired by

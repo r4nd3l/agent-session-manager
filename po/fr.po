@@ -367,8 +367,17 @@ msgstr "Notifications"
 msgid "Notify about background agents"
 msgstr "Notifier pour les agents en arrière-plan"
 
-msgid "Desktop notification when an agent you are not watching finishes or needs your input"
-msgstr "Notification de bureau lorsqu’un agent que vous ne regardez pas termine ou attend votre réponse"
+msgid "A notice when an agent you are not watching finishes or needs your input"
+msgstr "Avis lorsqu’un agent que vous ne regardez pas termine ou attend votre réponse"
+
+msgid "Play a sound"
+msgstr "Jouer un son"
+
+msgid "When an agent you are not watching finishes or needs your input"
+msgstr "Lorsqu’un agent que vous ne regardez pas termine ou attend votre réponse"
+
+msgid "Show"
+msgstr "Afficher"
 
 msgid "{agent} needs your input."
 msgstr "{agent} attend votre réponse."

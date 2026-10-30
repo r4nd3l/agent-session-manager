@@ -179,7 +179,8 @@ class MainWindow(Adw.ApplicationWindow):
         content_view = Adw.ToolbarView()
         content_view.add_top_bar(content_header)
         content_view.add_top_bar(self.tab_strip)
-        content_view.set_content(self.content_stack)
+        self.toasts = Adw.ToastOverlay(child=self.content_stack)
+        content_view.set_content(self.toasts)
 
         # --- sidebar: spaces + agents on top, session history below ---
         self.spaces_panel = SpacesPanel(self.state)
@@ -664,21 +665,42 @@ class MainWindow(Adw.ApplicationWindow):
             self._set_page_state(page, "idle")
 
     def _notify_state(self, page: Adw.TabPage, state: str) -> None:
+        """Like herdr: a sound, plus a toast while you're in the window or a
+        desktop notification while you're not."""
+        if self.state.get_setting("notify_sound"):
+            self._play_sound(state)
         app = self.get_application()
         if app is None or not self.state.get_setting("notify_idle"):
             return
         tab = self._tab_of(page)
         agent = tab.provider.name if isinstance(tab, TerminalTab) else ""
-        notification = Gio.Notification.new(page.get_title())
         if state == "blocked":
-            notification.set_body(_("{agent} needs your input.").format(agent=agent))
+            body = _("{agent} needs your input.").format(agent=agent)
         else:
-            notification.set_body(_("{agent} finished.").format(agent=agent))
+            body = _("{agent} finished.").format(agent=agent)
         target = self._session_id_of(page) or page.get_title()
-        notification.set_default_action_and_target_value(
-            "app.focus-session", GLib.Variant("s", target)
+        if self.is_active():
+            toast = Adw.Toast(title=f"{page.get_title()}: {body}", timeout=6)
+            toast.set_button_label(_("Show"))
+            toast.set_action_name("app.focus-session")
+            toast.set_action_target_value(GLib.Variant("s", target))
+            self.toasts.add_toast(toast)
+            return
+        notification = Gio.Notification.new(page.get_title())
+        notification.set_body(body)
+        notification.set_default_action(  # works on every PyGObject, unlike *_and_target_value
+            Gio.Action.print_detailed_name("app.focus-session", GLib.Variant("s", target))
         )
         app.send_notification(target, notification)
+
+    def _play_sound(self, state: str) -> None:
+        name = "dialog-warning" if state == "blocked" else "complete"
+        path = f"/usr/share/sounds/freedesktop/stereo/{name}.oga"
+        if not Path(path).exists():  # no sound theme installed
+            self.get_display().beep()
+            return
+        self._sound = Gtk.MediaFile.new_for_filename(path)  # keep a ref while it plays
+        self._sound.play()
 
     def _on_selected_page_changed(self, view: Adw.TabView, _pspec) -> None:
         page = view.get_selected_page()

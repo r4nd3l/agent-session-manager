@@ -35,8 +35,11 @@ States are read from what the agent shows: Claude Code's terminal title and
 the bottom of the screen (for example "Do you want to proceed?"), or Cursor's
 footer and approval prompts. See [How It Works](/guide/how-it-works#agent-states).
 
-**Desktop notifications** fire when an agent you aren't watching finishes or
-gets blocked; click one to jump to that tab. Toggle them in Preferences.
+**Notifications**: when an agent you aren't watching finishes or gets
+blocked, you hear a sound and get a notice, as in herdr. While you're in the
+window it's an in-app toast; otherwise a desktop notification. Its **Show**
+button (or a click on the notification) jumps to that tab. Toggle the notice
+and the sound separately in **Preferences → Notifications**.
 
 ## Tabs
 
